@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+*.db
+data/
+.DS_Store
+*.log
+*.pdf
+gp.txt
+RizeOS_Assessment_Plan.md
+RizeOS_Gaps_Audit.md

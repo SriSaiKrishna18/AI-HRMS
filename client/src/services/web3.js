@@ -3,19 +3,11 @@ import { ethers } from 'ethers';
 // Sepolia testnet chain ID
 const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111 in hex
 
-// Simple smart contract ABI for task logging
-// If no contract deployed, we fall back to a simple transaction
-const TASK_LOGGER_ABI = [
-    'function logTaskCompletion(address employee, uint256 taskId) external',
-    'event TaskCompleted(address indexed employee, uint256 indexed taskId, uint256 timestamp)'
-];
-
 class Web3Service {
     constructor() {
         this.provider = null;
         this.signer = null;
         this.address = null;
-        this.contractAddress = null; // Set after deploying
     }
 
     // Check if MetaMask is available
@@ -30,10 +22,7 @@ class Web3Service {
         }
 
         try {
-            // Request accounts
             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-
-            // Create provider and signer
             this.provider = new ethers.BrowserProvider(window.ethereum);
             this.signer = await this.provider.getSigner();
             this.address = accounts[0];
@@ -53,6 +42,29 @@ class Web3Service {
         }
     }
 
+    // Ensure wallet is connected and signer is fresh
+    async ensureConnected() {
+        if (!this.isMetaMaskInstalled()) {
+            throw new Error('MetaMask is not installed.');
+        }
+
+        // Always re-create provider and signer to handle page navigation
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (!accounts || accounts.length === 0) {
+            // Need user approval
+            const reqAccounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            this.address = reqAccounts[0];
+        } else {
+            this.address = accounts[0];
+        }
+
+        this.provider = new ethers.BrowserProvider(window.ethereum);
+        this.signer = await this.provider.getSigner();
+        await this.switchToSepolia();
+
+        return this.signer;
+    }
+
     // Switch to Sepolia testnet
     async switchToSepolia() {
         try {
@@ -61,7 +73,6 @@ class Web3Service {
                 params: [{ chainId: SEPOLIA_CHAIN_ID }]
             });
         } catch (err) {
-            // If Sepolia not added, add it
             if (err.code === 4902) {
                 await window.ethereum.request({
                     method: 'wallet_addEthereumChain',
@@ -77,8 +88,11 @@ class Web3Service {
         }
     }
 
-    // Log task completion on-chain (simple transaction with data payload)
+    // Log task completion on-chain
     async logTaskOnChain(employeeId, taskId) {
+        // Auto-reconnect: ensure signer is fresh
+        await this.ensureConnected();
+
         if (!this.signer) {
             throw new Error('Wallet not connected.');
         }
@@ -98,7 +112,7 @@ class Web3Service {
 
             // Send a minimal transaction to self with task data
             const tx = await this.signer.sendTransaction({
-                to: this.address, // send to self
+                to: this.address,
                 value: 0,
                 data: data
             });
@@ -146,6 +160,5 @@ class Web3Service {
     }
 }
 
-// Singleton instance
 const web3Service = new Web3Service();
 export default web3Service;

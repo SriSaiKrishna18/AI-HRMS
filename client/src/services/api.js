@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+// Auto-detect production: if not localhost, use Render backend directly
+const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
+const baseURL = isProduction
+    ? 'https://ai-hrms-50sy.onrender.com/api'
+    : '/api';
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL,
     headers: { 'Content-Type': 'application/json' }
 });
 

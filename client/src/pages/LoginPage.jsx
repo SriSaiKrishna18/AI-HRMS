@@ -11,19 +11,25 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const { login, register } = useAuth();
     const navigate = useNavigate();
+    const [coldStart, setColdStart] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
+        setColdStart(false);
+        const timer = setTimeout(() => setColdStart(true), 5000);
         try {
             if (isRegister) {
                 await register(name, email, password);
             } else {
                 await login(email, password);
             }
+            clearTimeout(timer);
             navigate('/');
         } catch (err) {
+            clearTimeout(timer);
+            setColdStart(false);
             setError(err.response?.data?.error || 'Something went wrong.');
         } finally {
             setLoading(false);
@@ -131,6 +137,21 @@ export default function LoginPage() {
                         </div>
                     )}
 
+                    {coldStart && (
+                        <div style={{
+                            background: 'rgba(251,191,36,0.08)',
+                            border: '1px solid rgba(251,191,36,0.2)',
+                            color: '#fbbf24',
+                            padding: '10px 14px',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            marginBottom: 20,
+                            lineHeight: 1.5
+                        }}>
+                            ⏳ Server is waking up (free tier cold start — takes ~30s on first load). Please wait...
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit}>
                         {isRegister && (
                             <div style={{ marginBottom: 16 }}>
@@ -160,8 +181,14 @@ export default function LoginPage() {
 
                         <button type="submit" className="btn-primary" disabled={loading}
                             style={{ width: '100%', justifyContent: 'center', padding: '12px 24px', fontSize: 14 }}>
-                            {loading ? <><div className="spinner" /> Please wait...</> : (isRegister ? 'Create workspace' : 'Sign in')}
+                            {loading ? <><div className="spinner" /> {coldStart ? 'Waking server...' : 'Please wait...'}</> : (isRegister ? 'Create workspace' : 'Sign in')}
                         </button>
+
+                        {!isRegister && (
+                            <p style={{ fontSize: 11, color: '#3f3f46', textAlign: 'center', marginTop: 12 }}>
+                                Demo: admin@rizetech.com / demo123
+                            </p>
+                        )}
                     </form>
 
                     <div style={{ textAlign: 'center', marginTop: 24 }}>

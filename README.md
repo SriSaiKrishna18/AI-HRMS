@@ -41,6 +41,9 @@
 - ⚡ **Smart Task Assignment** — AI-powered employee recommendation for new tasks
   - Ranks all employees by: 50% skill match + 30% workload availability + 20% productivity history
   - Returns top 3 candidates with composite scores and human-readable reasoning
+- 📉 **Performance Trend Prediction** — 30-day rolling window comparison (embedded in productivity scoring)
+  - Compares completed tasks in last 30 days vs previous 30 days
+  - Returns: `improving` / `stable` / `declining` trend indicator
 
 ### Web3 Integration
 - 🦊 **MetaMask Wallet Connect** — One-click wallet connection with Sepolia auto-switching
@@ -149,7 +152,7 @@ Final Score = (Base Score × 0.7) + (Deadline Adherence × 0.3)
 - **Medium** (50–69): Average performance
 - **Low** (0–49): Needs attention
 
-Includes **30-day trend analysis** (improving / stable / declining).
+Includes **30-day trend analysis** (improving / stable / declining) — this is essentially **Performance Trend Prediction** embedded directly into the scoring engine.
 
 ### Skill Gap Detection
 - Maintains a `role_requirements` table with required skills per role
@@ -192,24 +195,25 @@ Located at `contracts/TaskLogger.sol`:
 ```
 Rise_os/
 ├── server/                          # Backend API
-│   ├── config/db.js                 # SQLite database + schema + seed data
+│   ├── config/db.js                 # SQLite database + schema + role_requirements seed
 │   ├── middleware/auth.js           # JWT authentication middleware
 │   ├── controllers/
 │   │   ├── authController.js        # Register + Login
 │   │   ├── employeeController.js    # Employee CRUD
 │   │   ├── taskController.js        # Task management + Web3 tx storage
 │   │   ├── dashboardController.js   # Dashboard statistics
-│   │   └── aiController.js          # AI productivity + skill gap
+│   │   └── aiController.js          # AI: productivity + skill gap + smart assignment
 │   ├── routes/                      # Express route files
-│   ├── server.js                    # Entry point
+│   ├── seed.js                      # Demo data (8 employees, 12 tasks) — auto-runs on empty DB
+│   ├── server.js                    # Entry point (auto-seeds if DB empty)
 │   └── .env.example                 # Environment template
 ├── client/                          # Frontend SPA
 │   ├── src/
 │   │   ├── context/AuthContext.jsx   # Authentication state
-│   │   ├── services/api.js           # Axios + JWT interceptor
-│   │   ├── services/web3.js          # MetaMask + ethers.js integration
-│   │   ├── components/Layout.jsx     # Sidebar navigation
-│   │   ├── components/WalletConnect.jsx  # MetaMask connect UI
+│   │   ├── services/api.js           # Axios + JWT interceptor + production auto-detect
+│   │   ├── services/web3.js          # MetaMask + ethers.js + Sepolia integration
+│   │   ├── components/Layout.jsx     # Sidebar navigation + wallet status
+│   │   ├── components/WalletConnect.jsx  # MetaMask connect/disconnect UI
 │   │   └── pages/                    # Login, Dashboard, Employees, Tasks
 │   ├── index.html                   # SEO-optimized entry
 │   └── vite.config.js               # Vite + Tailwind + API proxy
@@ -222,14 +226,17 @@ Rise_os/
 
 ## 🛡️ Scalability Thinking
 
-### For 100K Employees / 1M Task Logs:
+> **Note:** SQLite is used intentionally for demo/assessment portability — zero-config, self-contained, no external DB setup needed. The server auto-seeds demo data on startup if the database is empty, ensuring evaluators always see a populated app even after Render's ephemeral filesystem resets.
+
+### Production Migration Path (100K Employees / 1M Task Logs):
 - **Database**: Migrate to PostgreSQL with connection pooling (pg-pool), add indexes on `employee_id`, `org_id`, `status`
-- **Caching**: Redis for dashboard stats and frequently accessed data
-- **Pagination**: Server-side pagination for employee/task lists
+- **Caching**: Redis for dashboard stats and frequently accessed data (TTL-based invalidation)
+- **Pagination**: Server-side cursor pagination for employee/task lists
 - **Queue Processing**: Bull/BullMQ for background Web3 transactions and email notifications
 - **Search**: Elasticsearch for full-text employee/skill search
 - **CDN**: Static asset delivery via CloudFront/Vercel Edge
-- **Monitoring**: Prometheus + Grafana for API performance metrics
+- **Monitoring**: Prometheus + Grafana for API latency, error rates, and throughput
+- **Auth**: Rotate JWT secrets, add refresh tokens, rate-limit login endpoint
 
 ---
 
@@ -247,8 +254,18 @@ Any employee with `is_active = 1` in the database. Deactivation is a soft-delete
 **What is the JWT expiry?**
 24 hours. After expiry, the frontend's Axios interceptor automatically redirects to login with the stored token cleared.
 
+**Why SQLite instead of PostgreSQL?**
+SQLite is used for **demo portability**: zero configuration, no external database service, works out-of-the-box on any system. The server auto-seeds demo data on startup if the database is empty, ensuring the app is never blank. For production: migrate to PostgreSQL (Render provides free PG instances), add connection pooling, and run migrations.
+
 **Is this production-ready?**
-For demo/assessment purposes, yes. For production: migrate SQLite → PostgreSQL, add rate limiting, input sanitization middleware, and deploy behind HTTPS.
+For demo/assessment purposes, yes. For production: migrate SQLite → PostgreSQL, add rate limiting, input sanitization middleware, refresh tokens, and deploy behind HTTPS.
+
+---
+
+## 📸 Screenshots
+
+> Screenshots coming soon — see the [Live Demo](https://ai-hrms-iota.vercel.app) for the full experience.
+> Demo credentials: `admin@rizetech.com` / `demo123`
 
 ---
 

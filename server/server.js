@@ -11,6 +11,19 @@ const taskRoutes = require('./routes/tasks');
 const dashboardRoutes = require('./routes/dashboard');
 const aiRoutes = require('./routes/ai');
 
+// Auto-seed if database is empty (handles Render ephemeral filesystem wipe)
+const db = require('./config/db');
+const { runSeed } = require('./seed');
+try {
+    const count = db.prepare('SELECT COUNT(*) as count FROM employees').get();
+    if (count.count === 0) {
+        console.log('📦 Empty database detected — auto-seeding demo data...');
+        runSeed();
+    }
+} catch (err) {
+    console.error('Auto-seed check failed:', err.message);
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 

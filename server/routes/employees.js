@@ -6,6 +6,7 @@ const { employeeRules, validate } = require('../middleware/validate');
 
 router.post('/', auth, employeeRules, validate, employeeController.create);
 router.get('/', auth, employeeController.getAll);
+router.get('/export/csv', auth, employeeController.exportCsv);
 router.get('/:id', auth, employeeController.getOne);
 router.put('/:id', auth, employeeRules, validate, employeeController.update);
 router.delete('/:id', auth, employeeController.remove);

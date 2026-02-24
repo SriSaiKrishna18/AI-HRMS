@@ -36,11 +36,31 @@ exports.create = (req, res) => {
     }
 };
 
-// List all employees
+// List all employees (with search, pagination)
 exports.getAll = (req, res) => {
     try {
         const org_id = req.org.id;
-        const employees = db.prepare('SELECT * FROM employees WHERE org_id = ? ORDER BY created_at DESC').all(org_id);
+        const { search, page, limit: lim } = req.query;
+        const page_num = Math.max(1, parseInt(page) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(lim) || 50));
+        const offset = (page_num - 1) * limit;
+
+        let countQuery = 'SELECT COUNT(*) as total FROM employees WHERE org_id = ?';
+        let query = 'SELECT * FROM employees WHERE org_id = ?';
+        const params = [org_id];
+
+        if (search) {
+            const searchClause = " AND (name LIKE ? OR role LIKE ? OR department LIKE ? OR email LIKE ?)";
+            const searchParam = `%${search}%`;
+            countQuery += searchClause;
+            query += searchClause;
+            params.push(searchParam, searchParam, searchParam, searchParam);
+        }
+
+        const total = db.prepare(countQuery).get(...params).total;
+
+        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        const employees = db.prepare(query).all(...params, limit, offset);
 
         // Parse skills JSON
         const parsed = employees.map(emp => ({
@@ -48,7 +68,15 @@ exports.getAll = (req, res) => {
             skills: JSON.parse(emp.skills || '[]')
         }));
 
-        res.json({ employees: parsed });
+        res.json({
+            employees: parsed,
+            pagination: {
+                page: page_num,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
     } catch (err) {
         console.error('Get employees error:', err);
         res.status(500).json({ error: 'Internal server error.' });
@@ -130,6 +158,30 @@ exports.remove = (req, res) => {
         res.json({ message: 'Employee deleted successfully.' });
     } catch (err) {
         console.error('Delete employee error:', err);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+};
+
+// Export employees as CSV
+exports.exportCsv = (req, res) => {
+    try {
+        const org_id = req.org.id;
+        const employees = db.prepare('SELECT * FROM employees WHERE org_id = ? ORDER BY name').all(org_id);
+
+        const header = 'Name,Email,Role,Department,Skills,Wallet Address,Status';
+        const rows = employees.map(e => {
+            const skills = JSON.parse(e.skills || '[]').join('; ');
+            const wallet = e.wallet_address || 'N/A';
+            const status = e.is_active ? 'Active' : 'Inactive';
+            return `"${e.name}","${e.email}","${e.role}","${e.department}","${skills}","${wallet}","${status}"`;
+        });
+
+        const csv = [header, ...rows].join('\n');
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=employees.csv');
+        res.send(csv);
+    } catch (err) {
+        console.error('Export CSV error:', err);
         res.status(500).json({ error: 'Internal server error.' });
     }
 };

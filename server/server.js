@@ -3,6 +3,24 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+
+// Rate limiters
+const generalLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 100,
+    message: { error: 'Too many requests. Please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20, // 20 attempts per window
+    message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -55,7 +73,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api', generalLimiter);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/dashboard', dashboardRoutes);

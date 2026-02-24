@@ -110,9 +110,10 @@ class Web3Service {
                 )
             );
 
-            // Send a minimal transaction to self with task data
+            // Send to burn address with task data (MetaMask blocks data to self)
+            const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
             const tx = await this.signer.sendTransaction({
-                to: this.address,
+                to: BURN_ADDRESS,
                 value: ethers.parseEther('0'),
                 data: data
             });

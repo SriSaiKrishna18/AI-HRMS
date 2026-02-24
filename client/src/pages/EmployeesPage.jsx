@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineChartBar, HiOutlinePuzzle, HiOutlineX, HiOutlineUserGroup } from 'react-icons/hi';
+import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineChartBar, HiOutlinePuzzle, HiOutlineX, HiOutlineUserGroup, HiOutlineSearch, HiOutlineDownload } from 'react-icons/hi';
 
 export default function EmployeesPage() {
     const [employees, setEmployees] = useState([]);
@@ -12,6 +12,26 @@ export default function EmployeesPage() {
     const [aiScores, setAiScores] = useState({});
     const [aiPanel, setAiPanel] = useState(null);
     const [toast, setToast] = useState(null);
+    const [search, setSearch] = useState('');
+    const [deptFilter, setDeptFilter] = useState('');
+
+    const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
+    const filtered = employees.filter(e => {
+        const q = search.toLowerCase();
+        const matchSearch = !q || e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q) || e.department.toLowerCase().includes(q) || e.email.toLowerCase().includes(q);
+        const matchDept = !deptFilter || e.department === deptFilter;
+        return matchSearch && matchDept;
+    });
+
+    const handleExportCsv = async () => {
+        try {
+            const res = await api.get('/employees/export/csv', { responseType: 'blob' });
+            const url = URL.createObjectURL(new Blob([res.data]));
+            const a = document.createElement('a'); a.href = url; a.download = 'employees.csv'; a.click();
+            URL.revokeObjectURL(url);
+            showToast('CSV exported');
+        } catch { showToast('Export failed', 'error'); }
+    };
 
     useEffect(() => { fetchEmployees(); }, []);
 
@@ -99,14 +119,33 @@ export default function EmployeesPage() {
 
     return (
         <div className="animate-in">
-            <div className="page-header-responsive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div className="page-header-responsive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
                 <div>
                     <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>Employees</h1>
-                    <p style={{ color: '#52525b', fontSize: 13, marginTop: 4 }}>{employees.length} total members</p>
+                    <p style={{ color: '#52525b', fontSize: 13, marginTop: 4 }}>{filtered.length} of {employees.length} members</p>
                 </div>
-                <button className="btn-primary" onClick={() => { setEditId(null); setForm({ name: '', email: '', role: '', department: '', skills: '', wallet_address: '' }); setShowModal(true); }}>
-                    <HiOutlinePlus size={16} /> Add Employee
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn-ghost" onClick={handleExportCsv} title="Export CSV" style={{ padding: '8px 14px', fontSize: 12 }}>
+                        <HiOutlineDownload size={15} /> CSV
+                    </button>
+                    <button className="btn-primary" onClick={() => { setEditId(null); setForm({ name: '', email: '', role: '', department: '', skills: '', wallet_address: '' }); setShowModal(true); }}>
+                        <HiOutlinePlus size={16} /> Add Employee
+                    </button>
+                </div>
+            </div>
+
+            {/* Search and Filters */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+                    <HiOutlineSearch size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#52525b' }} />
+                    <input className="input" placeholder="Search by name, role, department..." value={search} onChange={e => setSearch(e.target.value)}
+                        style={{ paddingLeft: 34, fontSize: 12 }} />
+                </div>
+                <select className="input" value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
+                    style={{ width: 160, padding: '8px 12px', fontSize: 12 }}>
+                    <option value="">All Departments</option>
+                    {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
             </div>
 
             {/* Employee Table */}
@@ -120,7 +159,7 @@ export default function EmployeesPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {employees.map(emp => (
+                        {filtered.map(emp => (
                             <tr key={emp.id} className="table-row" style={{ borderBottom: '1px solid #1a1a1e' }}>
                                 <td style={{ padding: '14px 16px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -132,7 +171,12 @@ export default function EmployeesPage() {
                                         }}>{emp.name.charAt(0)}</div>
                                         <div>
                                             <p style={{ fontWeight: 600, fontSize: 13, color: '#e4e4e7' }}>{emp.name}</p>
-                                            <p style={{ fontSize: 11, color: '#52525b' }}>{emp.email}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                <p style={{ fontSize: 11, color: '#52525b' }}>{emp.email}</p>
+                                                {emp.wallet_address && (
+                                                    <span title={emp.wallet_address} style={{ fontSize: 9, padding: '1px 5px', background: 'rgba(249,115,22,0.1)', color: '#f97316', borderRadius: 4, fontFamily: 'monospace' }}>⟠ {emp.wallet_address.slice(0, 6)}…</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </td>

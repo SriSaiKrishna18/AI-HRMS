@@ -9,7 +9,7 @@ export default function EmployeesPage() {
     const [editId, setEditId] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [form, setForm] = useState({ name: '', email: '', role: '', department: '', skills: '', wallet_address: '' });
-    const [aiScores, setAiScores] = useState({}); // { empId: { score, rating } }
+    const [aiScores, setAiScores] = useState({});
     const [aiPanel, setAiPanel] = useState(null);
     const [toast, setToast] = useState(null);
 
@@ -20,7 +20,6 @@ export default function EmployeesPage() {
             const res = await api.get('/employees');
             const emps = res.data.employees;
             setEmployees(emps);
-            // Auto-load AI scores for all employees
             loadAiScores(emps);
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
@@ -47,10 +46,7 @@ export default function EmployeesPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
-        const payload = {
-            ...form,
-            skills: form.skills.split(',').map(s => s.trim()).filter(Boolean)
-        };
+        const payload = { ...form, skills: form.skills.split(',').map(s => s.trim()).filter(Boolean) };
         try {
             if (editId) {
                 await api.put(`/employees/${editId}`, payload);
@@ -59,150 +55,130 @@ export default function EmployeesPage() {
                 await api.post('/employees', payload);
                 showToast('Employee added');
             }
-            setShowModal(false);
-            setEditId(null);
+            setShowModal(false); setEditId(null);
             setForm({ name: '', email: '', role: '', department: '', skills: '', wallet_address: '' });
             fetchEmployees();
-        } catch (err) {
-            showToast(err.response?.data?.error || 'Error', 'error');
-        } finally {
-            setSubmitting(false);
-        }
+        } catch (err) { showToast(err.response?.data?.error || 'Error', 'error'); }
+        finally { setSubmitting(false); }
     };
 
     const handleEdit = (emp) => {
         setEditId(emp.id);
-        setForm({
-            name: emp.name, email: emp.email, role: emp.role, department: emp.department,
-            skills: (emp.skills || []).join(', '),
-            wallet_address: emp.wallet_address || ''
-        });
+        setForm({ name: emp.name, email: emp.email, role: emp.role, department: emp.department, skills: (emp.skills || []).join(', '), wallet_address: emp.wallet_address || '' });
         setShowModal(true);
     };
 
     const handleDelete = async (id) => {
         if (!confirm('Remove this employee?')) return;
-        try {
-            await api.delete(`/employees/${id}`);
-            showToast('Employee removed');
-            fetchEmployees();
-        } catch (err) { showToast('Error removing', 'error'); }
+        try { await api.delete(`/employees/${id}`); showToast('Employee removed'); fetchEmployees(); }
+        catch { showToast('Error removing', 'error'); }
     };
 
     const fetchProductivity = async (empId) => {
-        try {
-            const res = await api.get(`/ai/productivity/${empId}`);
-            setAiPanel({ type: 'productivity', data: res.data });
-        } catch (err) { showToast('Error loading AI data', 'error'); }
+        try { const res = await api.get(`/ai/productivity/${empId}`); setAiPanel({ type: 'productivity', data: res.data }); }
+        catch { showToast('Error loading AI data', 'error'); }
     };
 
     const fetchSkillGap = async (empId) => {
-        try {
-            const res = await api.get(`/ai/skill-gap/${empId}`);
-            setAiPanel({ type: 'skillgap', data: res.data });
-        } catch (err) { showToast('Error loading AI data', 'error'); }
+        try { const res = await api.get(`/ai/skill-gap/${empId}`); setAiPanel({ type: 'skillgap', data: res.data }); }
+        catch { showToast('Error loading AI data', 'error'); }
     };
 
-    const scoreColor = (score) => score >= 85 ? '#34d399' : score >= 70 ? '#60a5fa' : score >= 50 ? '#fbbf24' : '#f87171';
+    const scoreColor = (s) => s >= 85 ? '#22c55e' : s >= 70 ? '#3b82f6' : s >= 50 ? '#eab308' : '#ef4444';
 
     if (loading) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
                 <div style={{ textAlign: 'center' }}>
-                    <div className="spinner" style={{ margin: '0 auto 16px', width: 32, height: 32 }} />
-                    <p style={{ color: '#64748b', fontSize: 14 }}>Loading employees...</p>
+                    <div className="spinner" style={{ margin: '0 auto 12px', width: 28, height: 28 }} />
+                    <p style={{ color: '#52525b', fontSize: 13 }}>Loading employees...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="animate-fade-in">
-            <div className="page-header-responsive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+        <div className="animate-in">
+            <div className="page-header-responsive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                 <div>
-                    <h1 style={{ fontSize: 28, fontWeight: 800, color: '#f1f5f9' }}>Employees</h1>
-                    <p style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>{employees.length} total members</p>
+                    <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>Employees</h1>
+                    <p style={{ color: '#52525b', fontSize: 13, marginTop: 4 }}>{employees.length} total members</p>
                 </div>
                 <button className="btn-primary" onClick={() => { setEditId(null); setForm({ name: '', email: '', role: '', department: '', skills: '', wallet_address: '' }); setShowModal(true); }}>
-                    <HiOutlinePlus size={18} /> Add Employee
+                    <HiOutlinePlus size={16} /> Add Employee
                 </button>
             </div>
 
             {/* Employee Table */}
-            <div className="glass table-wrap" style={{ overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
+            <div className="card table-wrap">
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 780 }}>
                     <thead>
-                        <tr style={{ borderBottom: '1px solid rgba(148,163,184,0.1)' }}>
-                            {['Name', 'Role', 'Department', 'Skills', 'Score', 'AI Insights', 'Actions'].map(h => (
-                                <th key={h} style={{ padding: '14px 20px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                        <tr style={{ borderBottom: '1px solid #27272a' }}>
+                            {['Name', 'Role', 'Department', 'Skills', 'Score', 'AI', 'Actions'].map(h => (
+                                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
                         {employees.map(emp => (
-                            <tr key={emp.id} className="table-row" style={{ borderBottom: '1px solid rgba(148,163,184,0.05)' }}>
-                                <td style={{ padding: '16px 20px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <tr key={emp.id} className="table-row" style={{ borderBottom: '1px solid #1a1a1e' }}>
+                                <td style={{ padding: '14px 16px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                         <div style={{
-                                            width: 36, height: 36, borderRadius: '50%',
-                                            background: 'linear-gradient(135deg, #6366f1, #818cf8)',
+                                            width: 32, height: 32, borderRadius: '50%',
+                                            background: '#27272a',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: 14, fontWeight: 600, color: 'white'
+                                            fontSize: 13, fontWeight: 600, color: '#a1a1aa'
                                         }}>{emp.name.charAt(0)}</div>
                                         <div>
-                                            <p style={{ fontWeight: 600, fontSize: 14, color: '#e2e8f0' }}>{emp.name}</p>
-                                            <p style={{ fontSize: 12, color: '#64748b' }}>{emp.email}</p>
+                                            <p style={{ fontWeight: 600, fontSize: 13, color: '#e4e4e7' }}>{emp.name}</p>
+                                            <p style={{ fontSize: 11, color: '#52525b' }}>{emp.email}</p>
                                         </div>
                                     </div>
                                 </td>
-                                <td style={{ padding: '16px 20px', fontSize: 14, color: '#94a3b8' }}>{emp.role}</td>
-                                <td style={{ padding: '16px 20px', fontSize: 14, color: '#94a3b8' }}>{emp.department}</td>
-                                <td style={{ padding: '16px 20px' }}>
+                                <td style={{ padding: '14px 16px', fontSize: 13, color: '#a1a1aa' }}>{emp.role}</td>
+                                <td style={{ padding: '14px 16px', fontSize: 13, color: '#a1a1aa' }}>{emp.department}</td>
+                                <td style={{ padding: '14px 16px' }}>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                         {(emp.skills || []).slice(0, 3).map(s => (
                                             <span key={s} className="badge badge-skill">{s}</span>
                                         ))}
                                         {(emp.skills || []).length > 3 && (
-                                            <span className="badge" style={{ background: 'rgba(51,65,85,0.5)', color: '#94a3b8' }}>+{emp.skills.length - 3}</span>
+                                            <span className="badge" style={{ background: '#27272a', color: '#71717a' }}>+{emp.skills.length - 3}</span>
                                         )}
                                     </div>
                                 </td>
-                                {/* Inline AI Score */}
-                                <td style={{ padding: '16px 20px' }}>
+                                <td style={{ padding: '14px 16px' }}>
                                     {aiScores[emp.id] ? (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <div className="progress-bar" style={{ width: 60 }}>
+                                            <div className="progress-bar" style={{ width: 50 }}>
                                                 <div className="progress-fill" style={{ width: `${aiScores[emp.id].score}%`, background: scoreColor(aiScores[emp.id].score) }} />
                                             </div>
-                                            <span style={{ fontSize: 13, fontWeight: 600, color: scoreColor(aiScores[emp.id].score) }}>
+                                            <span style={{ fontSize: 12, fontWeight: 600, color: scoreColor(aiScores[emp.id].score) }}>
                                                 {aiScores[emp.id].score}
                                             </span>
                                         </div>
-                                    ) : (
-                                        <span style={{ fontSize: 12, color: '#475569' }}>—</span>
-                                    )}
+                                    ) : <span style={{ fontSize: 12, color: '#3f3f46' }}>—</span>}
                                 </td>
-                                <td style={{ padding: '16px 20px' }}>
-                                    <div style={{ display: 'flex', gap: 6 }}>
-                                        <button onClick={() => fetchProductivity(emp.id)} title="Productivity Score"
-                                            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8', padding: '6px 8px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                            <HiOutlineChartBar size={16} />
+                                <td style={{ padding: '14px 16px' }}>
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        <button onClick={() => fetchProductivity(emp.id)} title="Productivity"
+                                            className="btn-ghost" style={{ padding: '6px 8px' }}>
+                                            <HiOutlineChartBar size={15} />
                                         </button>
-                                        <button onClick={() => fetchSkillGap(emp.id)} title="Skill Gap Analysis"
-                                            style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#34d399', padding: '6px 8px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                            <HiOutlinePuzzle size={16} />
+                                        <button onClick={() => fetchSkillGap(emp.id)} title="Skill Gap"
+                                            className="btn-ghost" style={{ padding: '6px 8px', color: '#22c55e' }}>
+                                            <HiOutlinePuzzle size={15} />
                                         </button>
                                     </div>
                                 </td>
-                                <td style={{ padding: '16px 20px' }}>
-                                    <div style={{ display: 'flex', gap: 6 }}>
-                                        <button onClick={() => handleEdit(emp)}
-                                            style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#60a5fa', padding: '6px 8px', borderRadius: 8, cursor: 'pointer' }}>
-                                            <HiOutlinePencil size={16} />
+                                <td style={{ padding: '14px 16px' }}>
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        <button onClick={() => handleEdit(emp)} className="btn-ghost" style={{ padding: '6px 8px', color: '#3b82f6' }}>
+                                            <HiOutlinePencil size={15} />
                                         </button>
-                                        <button onClick={() => handleDelete(emp.id)}
-                                            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', padding: '6px 8px', borderRadius: 8, cursor: 'pointer' }}>
-                                            <HiOutlineTrash size={16} />
+                                        <button onClick={() => handleDelete(emp.id)} className="btn-ghost" style={{ padding: '6px 8px', color: '#ef4444' }}>
+                                            <HiOutlineTrash size={15} />
                                         </button>
                                     </div>
                                 </td>
@@ -212,19 +188,19 @@ export default function EmployeesPage() {
                 </table>
                 {employees.length === 0 && (
                     <div style={{ padding: 48, textAlign: 'center' }}>
-                        <HiOutlineUserGroup size={40} style={{ color: '#334155', margin: '0 auto 12px', display: 'block' }} />
-                        <p style={{ color: '#475569', fontSize: 14 }}>No employees yet. Click "Add Employee" to start.</p>
+                        <HiOutlineUserGroup size={36} style={{ color: '#27272a', margin: '0 auto 10px', display: 'block' }} />
+                        <p style={{ color: '#3f3f46', fontSize: 13 }}>No employees yet. Click "Add Employee" to start.</p>
                     </div>
                 )}
             </div>
 
-            {/* Add/Edit Modal */}
+            {/* Modal */}
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9' }}>{editId ? 'Edit Employee' : 'Add Employee'}</h2>
-                            <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><HiOutlineX size={20} /></button>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+                            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#fafafa' }}>{editId ? 'Edit Employee' : 'Add Employee'}</h2>
+                            <button onClick={() => setShowModal(false)} className="btn-ghost"><HiOutlineX size={18} /></button>
                         </div>
                         <form onSubmit={handleSubmit}>
                             {[
@@ -235,14 +211,14 @@ export default function EmployeesPage() {
                                 { label: 'Skills (comma-separated)', key: 'skills', type: 'text', placeholder: 'React, Node.js, TypeScript' },
                                 { label: 'Wallet Address', key: 'wallet_address', type: 'text', placeholder: '0x...' },
                             ].map(f => (
-                                <div key={f.key} style={{ marginBottom: 16 }}>
-                                    <label style={{ fontSize: 13, fontWeight: 500, color: '#94a3b8', marginBottom: 6, display: 'block' }}>{f.label}</label>
+                                <div key={f.key} style={{ marginBottom: 14 }}>
+                                    <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>{f.label}</label>
                                     <input className="input" type={f.type} placeholder={f.placeholder} required={f.required}
                                         value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })} />
                                 </div>
                             ))}
-                            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                                <button type="submit" className="btn-primary" disabled={submitting} style={{ flex: 1, justifyContent: 'center', opacity: submitting ? 0.7 : 1 }}>
+                            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                                <button type="submit" className="btn-primary" disabled={submitting} style={{ flex: 1, justifyContent: 'center', opacity: submitting ? 0.5 : 1 }}>
                                     {submitting ? <><div className="spinner" /> Saving...</> : editId ? 'Update' : 'Add Employee'}
                                 </button>
                                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
@@ -252,41 +228,41 @@ export default function EmployeesPage() {
                 </div>
             )}
 
-            {/* AI Insight Panel */}
+            {/* AI Panel */}
             {aiPanel && (
                 <div className="modal-overlay" onClick={() => setAiPanel(null)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9' }}>
-                                {aiPanel.type === 'productivity' ? '📊 Productivity Score' : '🧩 Skill Gap Analysis'}
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#fafafa' }}>
+                                {aiPanel.type === 'productivity' ? 'Productivity Score' : 'Skill Gap Analysis'}
                             </h2>
-                            <button onClick={() => setAiPanel(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><HiOutlineX size={20} /></button>
+                            <button onClick={() => setAiPanel(null)} className="btn-ghost"><HiOutlineX size={18} /></button>
                         </div>
 
                         {aiPanel.type === 'productivity' && (
                             <div>
-                                <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                                    <p style={{ fontSize: 48, fontWeight: 800, color: scoreColor(aiPanel.data.score) }}>{aiPanel.data.score}</p>
-                                    <p style={{ fontSize: 14, color: '#94a3b8', marginTop: 4 }}>{aiPanel.data.rating} Performance</p>
-                                    {aiPanel.data.message && <p style={{ fontSize: 13, color: '#64748b', marginTop: 8, fontStyle: 'italic' }}>{aiPanel.data.message}</p>}
+                                <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                                    <p style={{ fontSize: 44, fontWeight: 800, color: scoreColor(aiPanel.data.score), letterSpacing: '-0.03em' }}>{aiPanel.data.score}</p>
+                                    <p style={{ fontSize: 13, color: '#71717a', marginTop: 2 }}>{aiPanel.data.rating} Performance</p>
+                                    {aiPanel.data.message && <p style={{ fontSize: 12, color: '#52525b', marginTop: 6 }}>{aiPanel.data.message}</p>}
                                 </div>
-                                <div className="progress-bar" style={{ marginBottom: 20 }}>
-                                    <div className="progress-fill" style={{ width: `${aiPanel.data.score}%`, background: `linear-gradient(90deg, ${scoreColor(aiPanel.data.score)}, ${scoreColor(aiPanel.data.score)}88)` }} />
+                                <div className="progress-bar" style={{ marginBottom: 18 }}>
+                                    <div className="progress-fill" style={{ width: `${aiPanel.data.score}%`, background: scoreColor(aiPanel.data.score) }} />
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                                     {[
-                                        { label: 'Tasks Completed', value: aiPanel.data.details.completedTasks },
+                                        { label: 'Completed', value: aiPanel.data.details.completedTasks },
                                         { label: 'Total Tasks', value: aiPanel.data.details.totalTasks },
-                                        { label: 'Completion Rate', value: `${aiPanel.data.details.completionRate}%` },
-                                        { label: 'On-Time Rate', value: `${aiPanel.data.details.deadlineAdherence}%` },
+                                        { label: 'Completion', value: `${aiPanel.data.details.completionRate}%` },
+                                        { label: 'On-Time', value: `${aiPanel.data.details.deadlineAdherence}%` },
                                     ].map((item, i) => (
-                                        <div key={i} className="glass-light" style={{ padding: 14, textAlign: 'center' }}>
-                                            <p style={{ fontSize: 20, fontWeight: 700, color: '#e2e8f0' }}>{item.value}</p>
-                                            <p style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{item.label}</p>
+                                        <div key={i} style={{ padding: 12, background: '#0f0f11', borderRadius: 8, textAlign: 'center' }}>
+                                            <p style={{ fontSize: 18, fontWeight: 700, color: '#e4e4e7' }}>{item.value}</p>
+                                            <p style={{ fontSize: 11, color: '#52525b', marginTop: 2 }}>{item.label}</p>
                                         </div>
                                     ))}
                                 </div>
-                                <div style={{ marginTop: 16, textAlign: 'center' }}>
+                                <div style={{ marginTop: 14, textAlign: 'center' }}>
                                     <span className={`badge ${aiPanel.data.trend === 'improving' ? 'status-completed' : aiPanel.data.trend === 'declining' ? 'badge-missing' : 'badge-skill'}`}>
                                         Trend: {aiPanel.data.trend}
                                     </span>
@@ -296,40 +272,35 @@ export default function EmployeesPage() {
 
                         {aiPanel.type === 'skillgap' && (
                             <div>
-                                <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                                    <p style={{ fontSize: 36, fontWeight: 800, color: scoreColor(aiPanel.data.matchPercentage) }}>{aiPanel.data.matchPercentage}%</p>
-                                    <p style={{ fontSize: 14, color: '#94a3b8' }}>Skill Match · {aiPanel.data.level}</p>
+                                <div style={{ textAlign: 'center', marginBottom: 18 }}>
+                                    <p style={{ fontSize: 36, fontWeight: 800, color: scoreColor(aiPanel.data.matchPercentage), letterSpacing: '-0.03em' }}>{aiPanel.data.matchPercentage}%</p>
+                                    <p style={{ fontSize: 13, color: '#71717a' }}>Skill Match · {aiPanel.data.level}</p>
                                 </div>
-                                <div className="progress-bar" style={{ marginBottom: 24 }}>
-                                    <div className="progress-fill" style={{ width: `${aiPanel.data.matchPercentage}%`, background: `linear-gradient(90deg, #6366f1, #34d399)` }} />
+                                <div className="progress-bar" style={{ marginBottom: 20 }}>
+                                    <div className="progress-fill" style={{ width: `${aiPanel.data.matchPercentage}%`, background: '#6366f1' }} />
                                 </div>
-
                                 {aiPanel.data.matchedSkills?.length > 0 && (
-                                    <div style={{ marginBottom: 16 }}>
-                                        <p style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', marginBottom: 8 }}>✅ Matched Skills</p>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                    <div style={{ marginBottom: 14 }}>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: '#71717a', marginBottom: 6 }}>✓ Matched Skills</p>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                             {aiPanel.data.matchedSkills.map(s => <span key={s} className="badge badge-skill">{s}</span>)}
                                         </div>
                                     </div>
                                 )}
-
                                 {aiPanel.data.missingSkills?.length > 0 && (
-                                    <div style={{ marginBottom: 16 }}>
-                                        <p style={{ fontSize: 13, fontWeight: 600, color: '#f87171', marginBottom: 8 }}>⚠️ Missing Skills</p>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                    <div style={{ marginBottom: 14 }}>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: '#ef4444', marginBottom: 6 }}>✗ Missing Skills</p>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                             {aiPanel.data.missingSkills.map(s => <span key={s} className="badge badge-missing">{s}</span>)}
                                         </div>
                                     </div>
                                 )}
-
                                 {aiPanel.data.suggestedCourses?.length > 0 && (
                                     <div>
-                                        <p style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', marginBottom: 8 }}>📚 Suggested Courses</p>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: '#71717a', marginBottom: 6 }}>Suggested Courses</p>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                             {aiPanel.data.suggestedCourses.map((c, i) => (
-                                                <div key={i} className="glass-light" style={{ padding: '10px 14px', fontSize: 13, color: '#e2e8f0' }}>
-                                                    {c}
-                                                </div>
+                                                <div key={i} style={{ padding: '8px 12px', background: '#0f0f11', borderRadius: 6, fontSize: 12, color: '#a1a1aa' }}>{c}</div>
                                             ))}
                                         </div>
                                     </div>
@@ -340,7 +311,6 @@ export default function EmployeesPage() {
                 </div>
             )}
 
-            {/* Toast */}
             {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
         </div>
     );

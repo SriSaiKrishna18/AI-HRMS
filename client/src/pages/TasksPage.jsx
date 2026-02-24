@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import web3Service from '../services/web3';
-import { HiOutlinePlus, HiOutlineX, HiOutlineExternalLink } from 'react-icons/hi';
+import { HiOutlinePlus, HiOutlineX, HiOutlineExternalLink, HiOutlineClipboardList } from 'react-icons/hi';
 
 export default function TasksPage() {
     const [tasks, setTasks] = useState([]);
@@ -43,8 +43,6 @@ export default function TasksPage() {
         try {
             await api.put(`/tasks/${taskId}/status`, { status: newStatus });
             showToast(`Status → ${newStatus.replace('_', ' ')}`);
-
-            // If completing a task and wallet is connected, log on-chain
             if (newStatus === 'completed' && web3Service.getAddress()) {
                 try {
                     showToast('Logging to blockchain...', 'success');
@@ -56,7 +54,6 @@ export default function TasksPage() {
                     showToast('Task completed (Web3 log skipped)', 'error');
                 }
             }
-
             fetchData();
         } catch (err) { showToast(err.response?.data?.error || 'Cannot change status', 'error'); }
     };
@@ -76,46 +73,55 @@ export default function TasksPage() {
 
     const nextStatus = { assigned: 'in_progress', in_progress: 'completed' };
 
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div className="spinner" style={{ margin: '0 auto 12px', width: 28, height: 28 }} />
+                    <p style={{ color: '#52525b', fontSize: 13 }}>Loading tasks...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="animate-fade-in">
-            <div className="page-header-responsive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+        <div className="animate-in">
+            {/* Header */}
+            <div className="page-header-responsive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                 <div>
-                    <h1 style={{ fontSize: 28, fontWeight: 800, color: '#f1f5f9' }}>Tasks</h1>
-                    <p style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>{tasks.length} total tasks</p>
+                    <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>Tasks</h1>
+                    <p style={{ color: '#52525b', fontSize: 13, marginTop: 4 }}>{tasks.length} total tasks</p>
                 </div>
                 <button className="btn-primary" onClick={() => setShowModal(true)}>
-                    <HiOutlinePlus size={18} /> Assign Task
+                    <HiOutlinePlus size={16} /> Assign Task
                 </button>
             </div>
 
             {/* Filters */}
-            <div className="filter-row-responsive" style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+            <div className="filter-row-responsive" style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
                 {[
                     { key: '', label: `All (${statusCounts.all})` },
                     { key: 'assigned', label: `Assigned (${statusCounts.assigned})` },
                     { key: 'in_progress', label: `In Progress (${statusCounts.in_progress})` },
-                    { key: 'completed', label: `Completed (${statusCounts.completed})` },
+                    { key: 'completed', label: `Done (${statusCounts.completed})` },
                 ].map(f => (
                     <button key={f.key}
                         onClick={() => setFilter({ ...filter, status: f.key })}
                         style={{
-                            padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-                            cursor: 'pointer', transition: 'all 0.2s',
-                            background: filter.status === f.key ? 'rgba(99,102,241,0.15)' : 'rgba(51,65,85,0.3)',
-                            border: `1px solid ${filter.status === f.key ? 'rgba(99,102,241,0.3)' : 'rgba(148,163,184,0.1)'}`,
-                            color: filter.status === f.key ? '#a5b4fc' : '#94a3b8'
+                            padding: '6px 14px', borderRadius: 100, fontSize: 12, fontWeight: 500,
+                            cursor: 'pointer', transition: 'all 0.15s',
+                            background: filter.status === f.key ? '#27272a' : 'transparent',
+                            border: `1px solid ${filter.status === f.key ? '#3f3f46' : '#27272a'}`,
+                            color: filter.status === f.key ? '#fafafa' : '#71717a'
                         }}>
                         {f.label}
                     </button>
                 ))}
 
                 {employees.length > 0 && (
-                    <select
-                        value={filter.employee_id}
+                    <select value={filter.employee_id}
                         onChange={e => setFilter({ ...filter, employee_id: e.target.value })}
-                        className="input"
-                        style={{ width: 200, padding: '8px 12px' }}
-                    >
+                        className="input" style={{ width: 180, padding: '6px 12px', fontSize: 12, borderRadius: 100 }}>
                         <option value="">All Employees</option>
                         {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
                     </select>
@@ -123,48 +129,47 @@ export default function TasksPage() {
             </div>
 
             {/* Task Cards */}
-            <div className="task-grid-responsive" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+            <div className="task-grid-responsive" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
                 {filteredTasks.map(task => (
-                    <div key={task.id} className="glass stat-card" style={{ padding: 22 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                    <div key={task.id} className="card card-hover" style={{ padding: 20 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                             <span className={`badge status-${task.status}`} style={{ fontSize: 11 }}>
                                 {task.status.replace('_', ' ')}
                             </span>
                             {task.deadline && (
-                                <span style={{ fontSize: 12, color: '#64748b' }}>
-                                    Due: {new Date(task.deadline).toLocaleDateString()}
+                                <span style={{ fontSize: 11, color: '#52525b' }}>
+                                    Due {new Date(task.deadline).toLocaleDateString()}
                                 </span>
                             )}
                         </div>
 
-                        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9', marginBottom: 6 }}>{task.title}</h3>
-                        {task.description && <p style={{ fontSize: 13, color: '#64748b', marginBottom: 12, lineHeight: 1.5 }}>{task.description}</p>}
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#e4e4e7', marginBottom: 4 }}>{task.title}</h3>
+                        {task.description && (
+                            <p style={{ fontSize: 13, color: '#52525b', marginBottom: 12, lineHeight: 1.5 }}>{task.description}</p>
+                        )}
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                             <div style={{
-                                width: 24, height: 24, borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #6366f1, #818cf8)',
+                                width: 22, height: 22, borderRadius: '50%',
+                                background: '#27272a',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 11, fontWeight: 600, color: 'white'
+                                fontSize: 10, fontWeight: 600, color: '#a1a1aa'
                             }}>{task.employee_name?.charAt(0)}</div>
-                            <span style={{ fontSize: 13, color: '#94a3b8' }}>{task.employee_name}</span>
+                            <span style={{ fontSize: 12, color: '#71717a' }}>{task.employee_name}</span>
                         </div>
 
                         {/* Actions */}
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                             {nextStatus[task.status] && (
-                                <button
-                                    onClick={() => handleStatusChange(task.id, nextStatus[task.status], task.employee_id)}
-                                    className="btn-primary"
-                                    style={{ fontSize: 12, padding: '6px 14px' }}
-                                >
+                                <button onClick={() => handleStatusChange(task.id, nextStatus[task.status], task.employee_id)}
+                                    className="btn-primary" style={{ fontSize: 12, padding: '5px 12px' }}>
                                     → {nextStatus[task.status].replace('_', ' ')}
                                 </button>
                             )}
                             {task.tx_hash && (
                                 <a href={`https://sepolia.etherscan.io/tx/${task.tx_hash}`} target="_blank" rel="noreferrer"
-                                    style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#818cf8', textDecoration: 'none' }}>
-                                    <HiOutlineExternalLink size={14} /> Tx
+                                    style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#6366f1', textDecoration: 'none' }}>
+                                    <HiOutlineExternalLink size={13} /> Etherscan
                                 </a>
                             )}
                         </div>
@@ -173,8 +178,9 @@ export default function TasksPage() {
             </div>
 
             {filteredTasks.length === 0 && !loading && (
-                <div className="glass" style={{ padding: 48, textAlign: 'center' }}>
-                    <p style={{ color: '#475569', fontSize: 14 }}>
+                <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+                    <HiOutlineClipboardList size={36} style={{ color: '#27272a', margin: '0 auto 10px', display: 'block' }} />
+                    <p style={{ color: '#3f3f46', fontSize: 13 }}>
                         {tasks.length === 0 ? 'No tasks yet. Assign a task to get started.' : 'No tasks match the current filter.'}
                     </p>
                 </div>
@@ -184,31 +190,31 @@ export default function TasksPage() {
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9' }}>Assign Task</h2>
-                            <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><HiOutlineX size={20} /></button>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+                            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#fafafa' }}>Assign Task</h2>
+                            <button onClick={() => setShowModal(false)} className="btn-ghost"><HiOutlineX size={18} /></button>
                         </div>
                         <form onSubmit={handleCreate}>
-                            <div style={{ marginBottom: 16 }}>
-                                <label style={{ fontSize: 13, fontWeight: 500, color: '#94a3b8', marginBottom: 6, display: 'block' }}>Employee</label>
+                            <div style={{ marginBottom: 14 }}>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Employee</label>
                                 <select className="input" required value={form.employee_id} onChange={e => setForm({ ...form, employee_id: e.target.value })}>
                                     <option value="">Select employee...</option>
                                     {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} — {emp.role}</option>)}
                                 </select>
                             </div>
-                            <div style={{ marginBottom: 16 }}>
-                                <label style={{ fontSize: 13, fontWeight: 500, color: '#94a3b8', marginBottom: 6, display: 'block' }}>Task Title</label>
+                            <div style={{ marginBottom: 14 }}>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Task Title</label>
                                 <input className="input" required placeholder="Design homepage UI" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
                             </div>
-                            <div style={{ marginBottom: 16 }}>
-                                <label style={{ fontSize: 13, fontWeight: 500, color: '#94a3b8', marginBottom: 6, display: 'block' }}>Description</label>
-                                <textarea className="input" rows={3} placeholder="Task details..." style={{ resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+                            <div style={{ marginBottom: 14 }}>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Description</label>
+                                <textarea className="input" rows={3} placeholder="Details..." style={{ resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
                             </div>
-                            <div style={{ marginBottom: 24 }}>
-                                <label style={{ fontSize: 13, fontWeight: 500, color: '#94a3b8', marginBottom: 6, display: 'block' }}>Deadline</label>
+                            <div style={{ marginBottom: 20 }}>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Deadline</label>
                                 <input className="input" type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} />
                             </div>
-                            <div style={{ display: 'flex', gap: 12 }}>
+                            <div style={{ display: 'flex', gap: 10 }}>
                                 <button type="submit" className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Assign Task</button>
                                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
                             </div>

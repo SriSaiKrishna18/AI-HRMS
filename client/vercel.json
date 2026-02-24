@@ -3,6 +3,10 @@
         {
             "source": "/api/:path*",
             "destination": "https://ai-hrms-50sy.onrender.com/api/:path*"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
         }
     ]
 }

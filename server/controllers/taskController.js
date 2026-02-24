@@ -16,6 +16,16 @@ exports.create = (req, res) => {
             return res.status(404).json({ error: 'Employee not found in your organization.' });
         }
 
+        // Validate deadline is not in the past (if provided)
+        if (deadline) {
+            const deadlineDate = new Date(deadline);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (deadlineDate < today) {
+                return res.status(400).json({ error: 'Deadline cannot be in the past.' });
+            }
+        }
+
         const result = db.prepare(
             'INSERT INTO tasks (org_id, employee_id, title, description, deadline) VALUES (?, ?, ?, ?, ?)'
         ).run(org_id, employee_id, title, description || null, deadline || null);
@@ -37,28 +47,44 @@ exports.create = (req, res) => {
     }
 };
 
-// List tasks (filterable)
+// List tasks (filterable with pagination)
 exports.getAll = (req, res) => {
     try {
         const org_id = req.org.id;
-        const { employee_id, status } = req.query;
+        const { employee_id, status, page, limit: lim } = req.query;
+        const page_num = Math.max(1, parseInt(page) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(lim) || 50));
+        const offset = (page_num - 1) * limit;
 
+        let countQuery = 'SELECT COUNT(*) as total FROM tasks t WHERE t.org_id = ?';
         let query = 'SELECT t.*, e.name as employee_name FROM tasks t JOIN employees e ON t.employee_id = e.id WHERE t.org_id = ?';
         const params = [org_id];
 
         if (employee_id) {
+            countQuery += ' AND t.employee_id = ?';
             query += ' AND t.employee_id = ?';
             params.push(employee_id);
         }
         if (status) {
+            countQuery += ' AND t.status = ?';
             query += ' AND t.status = ?';
             params.push(status);
         }
 
-        query += ' ORDER BY t.created_at DESC';
+        const total = db.prepare(countQuery).get(...params).total;
 
-        const tasks = db.prepare(query).all(...params);
-        res.json({ tasks });
+        query += ' ORDER BY t.created_at DESC LIMIT ? OFFSET ?';
+        const tasks = db.prepare(query).all(...params, limit, offset);
+
+        res.json({
+            tasks,
+            pagination: {
+                page: page_num,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
     } catch (err) {
         console.error('Get tasks error:', err);
         res.status(500).json({ error: 'Internal server error.' });

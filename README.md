@@ -2,9 +2,9 @@
 
 <div align="center">
 
-**🚀 An intelligent Human Resource Management System featuring AI workforce analytics, Web3 on-chain task verification, and a stunning dark glassmorphic UI.**
+**🚀 An intelligent Human Resource Management System featuring AI workforce analytics, Web3 on-chain task verification, and a clean enterprise dark UI.**
 
-[Live Demo](#) · [Demo Video](#) · [GTM Strategy](./GTM_STRATEGY.md)
+[Live Demo](https://ai-hrms-iota.vercel.app) · [Backend API](https://ai-hrms-50sy.onrender.com/api/health) · [GTM Strategy](./GTM_STRATEGY.md)
 
 </div>
 
@@ -38,6 +38,9 @@
 - 🧩 **Skill Gap Detection** — Compares employee skills vs role requirements
   - Returns missing skills + match percentage + suggested courses
   - Seeded with 8 role profiles (Frontend Dev, Backend Dev, DevOps, etc.)
+- ⚡ **Smart Task Assignment** — AI-powered employee recommendation for new tasks
+  - Ranks all employees by: 50% skill match + 30% workload availability + 20% productivity history
+  - Returns top 3 candidates with composite scores and human-readable reasoning
 
 ### Web3 Integration
 - 🦊 **MetaMask Wallet Connect** — One-click wallet connection with Sepolia auto-switching
@@ -46,7 +49,7 @@
 - 📝 **Smart Contract** — Solidity contract for permanent task completion records
 
 ### UI/UX
-- 🌑 **Dark Glassmorphic Theme** — Premium look with blur effects, gradients, and micro-animations
+- 🌑 **Enterprise Dark Theme** — Clean zinc/slate design with subtle borders and minimal animations
 - 🎨 **Custom Design System** — Purpose-built CSS with stat cards, badges, modals, and progress bars
 - 📱 **Responsive Layout** — Fixed sidebar navigation with Inter font typography
 - 🔔 **Toast Notifications** — Real-time feedback for all user actions
@@ -61,8 +64,8 @@
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/<your-username>/rizeos-ai-hrms.git
-cd rizeos-ai-hrms
+git clone https://github.com/SriSaiKrishna18/AI-HRMS.git
+cd AI-HRMS
 ```
 
 ### 2. Set up the backend
@@ -126,6 +129,7 @@ Navigate to `http://localhost:5173`. Login with `admin@rizetech.com` / `demo123`
 |---|---|---|
 | GET | `/api/ai/productivity/:employeeId` | Productivity score + trend |
 | GET | `/api/ai/skill-gap/:employeeId` | Skill gap analysis + courses |
+| GET | `/api/ai/suggest-assignment?skills=X,Y` | Smart task assignment — top 3 candidates |
 
 ---
 
@@ -152,6 +156,18 @@ Includes **30-day trend analysis** (improving / stable / declining).
 - Compares employee skills (case-insensitive) against role requirements
 - Returns **match percentage**, **missing skills**, and **suggested courses**
 - Classifies employee as: Expert / Advanced / Intermediate / Beginner
+
+### Smart Task Assignment
+```
+For each employee:
+  Skill Score     = (matched_skills / required_skills) × 100   [weight: 50%]
+  Workload Score  = max(0, 100 - active_tasks × 25)             [weight: 30%]
+  Productivity    = (completed_tasks / total_tasks) × 100       [weight: 20%]
+
+Composite = (Skill × 0.5) + (Workload × 0.3) + (Productivity × 0.2)
+```
+
+Returns top 3 employees ranked by composite score with human-readable reasoning.
 
 ---
 
@@ -239,3 +255,14 @@ For demo/assessment purposes, yes. For production: migrate SQLite → PostgreSQL
 ## 📄 License
 
 MIT License — Free for educational and commercial use.
+
+---
+
+## 🔗 Live Links
+
+| Resource | URL |
+|---|---|
+| **Frontend** | [ai-hrms-iota.vercel.app](https://ai-hrms-iota.vercel.app) |
+| **Backend** | [ai-hrms-50sy.onrender.com](https://ai-hrms-50sy.onrender.com/api/health) |
+| **GitHub** | [SriSaiKrishna18/AI-HRMS](https://github.com/SriSaiKrishna18/AI-HRMS) |
+| **Demo Credentials** | `admin@rizetech.com` / `demo123` |

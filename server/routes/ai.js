@@ -5,5 +5,6 @@ const auth = require('../middleware/auth');
 
 router.get('/productivity/:employeeId', auth, aiController.getProductivityScore);
 router.get('/skill-gap/:employeeId', auth, aiController.getSkillGap);
+router.get('/suggest-assignment', auth, aiController.suggestAssignment);
 
 module.exports = router;

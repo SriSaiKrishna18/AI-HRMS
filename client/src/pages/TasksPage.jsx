@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import web3Service from '../services/web3';
-import { HiOutlinePlus, HiOutlineX, HiOutlineExternalLink, HiOutlineClipboardList } from 'react-icons/hi';
+import { HiOutlinePlus, HiOutlineX, HiOutlineExternalLink, HiOutlineClipboardList, HiOutlineLightningBolt } from 'react-icons/hi';
 
 export default function TasksPage() {
     const [tasks, setTasks] = useState([]);
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [form, setForm] = useState({ employee_id: '', title: '', description: '', deadline: '' });
+    const [form, setForm] = useState({ employee_id: '', title: '', description: '', deadline: '', required_skills: '' });
     const [filter, setFilter] = useState({ status: '', employee_id: '' });
     const [toast, setToast] = useState(null);
+    const [aiSuggestions, setAiSuggestions] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
 
     useEffect(() => { fetchData(); }, []);
 
@@ -34,7 +36,8 @@ export default function TasksPage() {
             await api.post('/tasks', form);
             showToast('Task assigned');
             setShowModal(false);
-            setForm({ employee_id: '', title: '', description: '', deadline: '' });
+            setForm({ employee_id: '', title: '', description: '', deadline: '', required_skills: '' });
+            setAiSuggestions(null);
             fetchData();
         } catch (err) { showToast(err.response?.data?.error || 'Error', 'error'); }
     };
@@ -56,6 +59,17 @@ export default function TasksPage() {
             }
             fetchData();
         } catch (err) { showToast(err.response?.data?.error || 'Cannot change status', 'error'); }
+    };
+
+    const fetchSmartSuggestions = async () => {
+        const skills = form.required_skills?.trim();
+        if (!skills) { showToast('Enter required skills first', 'error'); return; }
+        setAiLoading(true);
+        try {
+            const res = await api.get(`/ai/suggest-assignment?skills=${encodeURIComponent(skills)}`);
+            setAiSuggestions(res.data);
+        } catch (err) { showToast('AI suggestion failed', 'error'); }
+        finally { setAiLoading(false); }
     };
 
     const filteredTasks = tasks.filter(t => {
@@ -196,19 +210,77 @@ export default function TasksPage() {
                         </div>
                         <form onSubmit={handleCreate}>
                             <div style={{ marginBottom: 14 }}>
-                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Employee</label>
-                                <select className="input" required value={form.employee_id} onChange={e => setForm({ ...form, employee_id: e.target.value })}>
-                                    <option value="">Select employee...</option>
-                                    {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} — {emp.role}</option>)}
-                                </select>
-                            </div>
-                            <div style={{ marginBottom: 14 }}>
                                 <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Task Title</label>
                                 <input className="input" required placeholder="Design homepage UI" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
                             </div>
                             <div style={{ marginBottom: 14 }}>
                                 <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Description</label>
-                                <textarea className="input" rows={3} placeholder="Details..." style={{ resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+                                <textarea className="input" rows={2} placeholder="Details..." style={{ resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+                            </div>
+                            <div style={{ marginBottom: 14 }}>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Required Skills</label>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <input className="input" style={{ flex: 1 }} placeholder="React, Node.js, Docker" value={form.required_skills} onChange={e => setForm({ ...form, required_skills: e.target.value })} />
+                                    <button type="button" onClick={fetchSmartSuggestions} disabled={aiLoading}
+                                        style={{
+                                            padding: '8px 14px', border: '1px solid #6366f1', borderRadius: 8,
+                                            background: 'rgba(99,102,241,0.1)', color: '#818cf8', fontSize: 12, fontWeight: 600,
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
+                                            opacity: aiLoading ? 0.5 : 1
+                                        }}>
+                                        {aiLoading ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <HiOutlineLightningBolt size={14} />}
+                                        Smart Assign
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* AI Suggestions Panel */}
+                            {aiSuggestions && aiSuggestions.suggestions?.length > 0 && (
+                                <div style={{ marginBottom: 16, padding: 12, background: '#0f0f11', borderRadius: 10, border: '1px solid #27272a' }}>
+                                    <p style={{ fontSize: 11, fontWeight: 600, color: '#818cf8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                        ⚡ AI Recommendations
+                                    </p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        {aiSuggestions.suggestions.map((s, i) => (
+                                            <div key={s.employeeId} onClick={() => { setForm({ ...form, employee_id: String(s.employeeId) }); showToast(`Selected ${s.name}`); }}
+                                                style={{
+                                                    padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+                                                    background: form.employee_id === String(s.employeeId) ? 'rgba(99,102,241,0.15)' : '#18181b',
+                                                    border: form.employee_id === String(s.employeeId) ? '1px solid #6366f1' : '1px solid #27272a',
+                                                    transition: 'all 0.15s'
+                                                }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        <span style={{
+                                                            fontSize: 11, fontWeight: 700, color: i === 0 ? '#22c55e' : i === 1 ? '#3b82f6' : '#eab308',
+                                                            background: i === 0 ? 'rgba(34,197,94,0.1)' : i === 1 ? 'rgba(59,130,246,0.1)' : 'rgba(234,179,8,0.1)',
+                                                            padding: '2px 6px', borderRadius: 4
+                                                        }}>#{i + 1}</span>
+                                                        <span style={{ fontSize: 13, fontWeight: 600, color: '#e4e4e7' }}>{s.name}</span>
+                                                        <span style={{ fontSize: 11, color: '#52525b' }}>{s.role}</span>
+                                                    </div>
+                                                    <span style={{ fontSize: 18, fontWeight: 800, color: s.compositeScore >= 70 ? '#22c55e' : s.compositeScore >= 50 ? '#3b82f6' : '#eab308' }}>{s.compositeScore}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                                    {s.reasons.map((r, j) => (
+                                                        <span key={j} style={{ fontSize: 10, color: '#71717a', background: '#27272a', padding: '2px 6px', borderRadius: 4 }}>{r}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p style={{ fontSize: 10, color: '#3f3f46', marginTop: 8, textAlign: 'center' }}>
+                                        {aiSuggestions.algorithm?.description}
+                                    </p>
+                                </div>
+                            )}
+
+                            <div style={{ marginBottom: 14 }}>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Employee</label>
+                                <select className="input" required value={form.employee_id} onChange={e => setForm({ ...form, employee_id: e.target.value })}>
+                                    <option value="">Select employee...</option>
+                                    {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} — {emp.role}</option>)}
+                                </select>
                             </div>
                             <div style={{ marginBottom: 20 }}>
                                 <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Deadline</label>
@@ -216,7 +288,7 @@ export default function TasksPage() {
                             </div>
                             <div style={{ display: 'flex', gap: 10 }}>
                                 <button type="submit" className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Assign Task</button>
-                                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                                <button type="button" className="btn-secondary" onClick={() => { setShowModal(false); setAiSuggestions(null); }}>Cancel</button>
                             </div>
                         </form>
                     </div>

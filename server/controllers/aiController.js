@@ -167,3 +167,91 @@ exports.getSkillGap = (req, res) => {
         res.status(500).json({ error: 'Internal server error.' });
     }
 };
+
+// Smart Task Assignment — Suggest best employee for a task
+exports.suggestAssignment = (req, res) => {
+    try {
+        const org_id = req.org.id;
+        const { skills, title } = req.query;
+
+        if (!skills) {
+            return res.status(400).json({ error: 'Please provide required skills as a comma-separated query parameter.' });
+        }
+
+        const requiredSkills = skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+        const employees = db.prepare('SELECT * FROM employees WHERE org_id = ? AND is_active = 1').all(org_id);
+
+        if (employees.length === 0) {
+            return res.json({ suggestions: [], message: 'No active employees found.' });
+        }
+
+        const scored = employees.map(emp => {
+            const empSkills = JSON.parse(emp.skills || '[]').map(s => s.toLowerCase());
+
+            // 1. Skill match score (0-100) — weight: 50%
+            const matchedSkills = requiredSkills.filter(s => empSkills.includes(s));
+            const skillScore = requiredSkills.length > 0
+                ? (matchedSkills.length / requiredSkills.length) * 100
+                : 50; // neutral if no skills specified
+
+            // 2. Workload score (0-100, lower workload = higher score) — weight: 30%
+            const activeTasks = db.prepare(
+                "SELECT COUNT(*) as count FROM tasks WHERE employee_id = ? AND status IN ('assigned', 'in_progress')"
+            ).get(emp.id).count;
+            const workloadScore = Math.max(0, 100 - (activeTasks * 25)); // 0 active = 100, 4+ active = 0
+
+            // 3. Productivity score (0-100) — weight: 20%
+            const totalTasks = db.prepare('SELECT COUNT(*) as count FROM tasks WHERE employee_id = ?').get(emp.id).count;
+            const completedTasks = db.prepare("SELECT COUNT(*) as count FROM tasks WHERE employee_id = ? AND status = 'completed'").get(emp.id).count;
+            const productivityScore = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 50;
+
+            // Weighted composite score
+            const compositeScore = Math.round(
+                (skillScore * 0.50) + (workloadScore * 0.30) + (productivityScore * 0.20)
+            );
+
+            // Generate reasoning
+            const reasons = [];
+            if (matchedSkills.length > 0) reasons.push(`Matches ${matchedSkills.length}/${requiredSkills.length} required skills (${matchedSkills.join(', ')})`);
+            if (matchedSkills.length === 0) reasons.push('No matching skills');
+            if (activeTasks === 0) reasons.push('No active tasks — fully available');
+            else if (activeTasks <= 2) reasons.push(`Low workload (${activeTasks} active task${activeTasks > 1 ? 's' : ''})`);
+            else reasons.push(`High workload (${activeTasks} active tasks)`);
+            if (productivityScore >= 80) reasons.push('Excellent track record');
+            else if (productivityScore >= 60) reasons.push('Good track record');
+
+            return {
+                employeeId: emp.id,
+                name: emp.name,
+                role: emp.role,
+                department: emp.department,
+                skills: JSON.parse(emp.skills || '[]'),
+                matchedSkills,
+                activeTasks,
+                compositeScore,
+                skillScore: Math.round(skillScore),
+                workloadScore: Math.round(workloadScore),
+                productivityScore: Math.round(productivityScore),
+                reasons
+            };
+        });
+
+        // Sort by composite score descending, return top 3
+        scored.sort((a, b) => b.compositeScore - a.compositeScore);
+        const top3 = scored.slice(0, 3);
+
+        res.json({
+            requiredSkills: skills.split(',').map(s => s.trim()),
+            totalCandidates: employees.length,
+            suggestions: top3,
+            algorithm: {
+                description: 'Weighted scoring: 50% skill match + 30% workload availability + 20% productivity history',
+                weights: { skillMatch: 0.5, workloadAvailability: 0.3, productivityHistory: 0.2 }
+            }
+        });
+    } catch (err) {
+        console.error('Smart assignment error:', err);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+};
+

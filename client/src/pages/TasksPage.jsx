@@ -51,7 +51,7 @@ export default function TasksPage() {
                     showToast('✅ Logged on Sepolia!');
                 } catch (web3Err) {
                     console.error('Web3 logging failed:', web3Err);
-                    showToast('Task completed (Web3 log skipped)', 'error');
+                    showToast(`Web3: ${web3Err.message || web3Err}`, 'error');
                 }
             }
             fetchData();

@@ -113,7 +113,7 @@ class Web3Service {
             // Send a minimal transaction to self with task data
             const tx = await this.signer.sendTransaction({
                 to: this.address,
-                value: 0,
+                value: ethers.parseEther('0'),
                 data: data
             });
 

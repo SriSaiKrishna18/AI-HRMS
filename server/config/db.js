@@ -56,6 +56,19 @@ function initializeDatabase() {
       FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS payroll_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      org_id INTEGER NOT NULL,
+      employee_id INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      period TEXT NOT NULL,
+      notes TEXT,
+      tx_hash TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE,
+      FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS role_requirements (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       role TEXT UNIQUE NOT NULL,

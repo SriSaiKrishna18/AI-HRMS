@@ -9,8 +9,9 @@ export default function DashboardPage() {
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [workloadData, setWorkloadData] = useState(null);
 
-    useEffect(() => { fetchStats(); }, []);
+    useEffect(() => { fetchStats(); fetchWorkload(); }, []);
 
     const fetchStats = async () => {
         try {
@@ -18,6 +19,13 @@ export default function DashboardPage() {
             setData(res.data);
         } catch (err) { console.error('Failed to load dashboard:', err); }
         finally { setLoading(false); }
+    };
+
+    const fetchWorkload = async () => {
+        try {
+            const res = await api.get('/ai/workload');
+            setWorkloadData(res.data);
+        } catch (err) { console.error('Workload load failed:', err); }
     };
 
     const timeAgo = (dateStr) => {
@@ -158,6 +166,48 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Team Workload Overview */}
+            {workloadData && (
+                <div className="card" style={{ padding: 22, marginBottom: 16 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>Team Workload</h3>
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                        {[
+                            { label: 'Available', count: workloadData.summary?.available || 0, color: '#22c55e', emoji: '🟢' },
+                            { label: 'Busy', count: workloadData.summary?.busy || 0, color: '#f59e0b', emoji: '🟡' },
+                            { label: 'Overloaded', count: workloadData.summary?.overloaded || 0, color: '#ef4444', emoji: '🔴' },
+                        ].map(w => (
+                            <div key={w.label} style={{
+                                flex: 1, padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: 8,
+                                display: 'flex', alignItems: 'center', gap: 8
+                            }}>
+                                <span style={{ fontSize: 14 }}>{w.emoji}</span>
+                                <div>
+                                    <p style={{ fontSize: 18, fontWeight: 700, color: w.color }}>{w.count}</p>
+                                    <p style={{ fontSize: 10, color: 'var(--text-dim)' }}>{w.label}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {(workloadData.workload || []).slice(0, 6).map(emp => (
+                            <div key={emp.id} style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '6px 10px', background: 'var(--bg-elevated)', borderRadius: 6, fontSize: 12
+                            }}>
+                                <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{emp.name}</span>
+                                <span style={{
+                                    padding: '2px 8px', borderRadius: 4, fontWeight: 600, fontSize: 10,
+                                    background: emp.color === 'red' ? 'rgba(239,68,68,0.12)' : emp.color === 'yellow' ? 'rgba(245,158,11,0.12)' : 'rgba(34,197,94,0.12)',
+                                    color: emp.color === 'red' ? '#ef4444' : emp.color === 'yellow' ? '#f59e0b' : '#22c55e'
+                                }}>
+                                    {emp.level} ({emp.active_tasks})
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Recent Activity */}
             <div className="card" style={{ padding: 22 }}>

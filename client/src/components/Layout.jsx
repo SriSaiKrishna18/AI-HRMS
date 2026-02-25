@@ -65,14 +65,6 @@ export default function Layout() {
                     ))}
                 </nav>
 
-                {/* Theme Toggle */}
-                <div style={{ padding: '0 6px', marginBottom: 8 }}>
-                    <button className="theme-toggle" onClick={toggleTheme}>
-                        {isDark ? <HiOutlineSun size={16} /> : <HiOutlineMoon size={16} />}
-                        {isDark ? 'Light Mode' : 'Dark Mode'}
-                    </button>
-                </div>
-
                 {/* Web3 */}
                 <div style={{ padding: '0 6px', marginBottom: 12 }}>
                     <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, padding: '0 8px' }}>Web3</p>
@@ -107,10 +99,37 @@ export default function Layout() {
             <main className="main-content-responsive" style={{
                 flex: 1,
                 marginLeft: 240,
-                padding: '28px 36px',
-                minHeight: '100vh'
+                minHeight: '100vh',
+                display: 'flex',
+                flexDirection: 'column'
             }}>
-                <Outlet />
+                {/* Top Header Bar */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    padding: '12px 36px',
+                    borderBottom: '1px solid var(--border-default)',
+                    background: 'var(--bg-card)'
+                }}>
+                    <button onClick={toggleTheme} className="theme-toggle" style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '6px 14px', borderRadius: 8,
+                        border: '1px solid var(--border-default)',
+                        background: 'var(--bg-elevated)',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                        transition: 'all 0.2s ease'
+                    }}>
+                        {isDark ? <HiOutlineSun size={16} /> : <HiOutlineMoon size={16} />}
+                        {isDark ? 'Light' : 'Dark'}
+                    </button>
+                </div>
+
+                {/* Page Content */}
+                <div style={{ padding: '28px 36px', flex: 1 }}>
+                    <Outlet />
+                </div>
             </main>
         </div>
     );

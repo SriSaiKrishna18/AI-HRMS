@@ -2,9 +2,9 @@
 
 <div align="center">
 
-**🚀 An intelligent Human Resource Management System featuring AI workforce analytics, Web3 on-chain task verification, and a clean enterprise dark UI.**
+**🚀 An intelligent Human Resource Management System featuring AI workforce analytics, Web3 on-chain task & payroll verification, 5-chart analytics dashboard, and a clean enterprise UI with dark/light themes.**
 
-[Live Demo](https://ai-hrms-iota.vercel.app) · [Backend API](https://ai-hrms-50sy.onrender.com/api/health) · [GTM Strategy](./GTM_STRATEGY.md)
+[Live Demo](https://ai-hrms-iota.vercel.app) · [Backend API](https://ai-hrms-50sy.onrender.com/api/health) · [Architecture](./ARCHITECTURE.md) · [GTM Strategy](./GTM_STRATEGY.md)
 
 </div>
 
@@ -14,13 +14,15 @@
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React.js 19 + Vite 7 + Tailwind CSS v4 |
+| **Frontend** | React.js 19 + Vite 7 + CSS Custom Properties (theming) |
 | **Backend** | Node.js + Express.js |
-| **Database** | SQLite (dev) / PostgreSQL (production) |
-| **Blockchain** | Ethereum Sepolia Testnet + ethers.js |
+| **Database** | SQLite (better-sqlite3 with WAL mode) |
+| **Charting** | Recharts (5 visualizations) |
+| **Blockchain** | Ethereum Sepolia Testnet + ethers.js + Solidity |
 | **Wallet** | MetaMask |
 | **AI/ML** | Custom scoring logic (no external API dependency) |
 | **Auth** | JWT (JSON Web Tokens) + bcrypt |
+| **Security** | Helmet, CORS, rate limiting, express-validator |
 
 ---
 
@@ -28,38 +30,48 @@
 
 ### Core HRMS
 - 🔐 **Organization Authentication** — Register & login with JWT-based auth
-- 👥 **Employee Management** — Full CRUD with roles, departments, and skill tags
-- 📋 **Task Management** — Assign tasks, track status (assigned → in_progress → completed)
-- 📊 **Dashboard Analytics** — Real-time stats, department performance charts, skill distribution cloud, overdue alerts, top performers with medals, activity feed
+- 👥 **Employee Management** — Full CRUD with roles, departments, skill tags, wallet addresses
+- 📋 **Task Management** — Assign tasks, track status (assigned → in_progress → completed), deadline tracking
+- 📊 **Dashboard** — Real-time stats, department performance, skill distribution, overdue alerts, top performers, activity feed
+- 🔎 **Search & Filter** — Real-time employee search by name/role/department/email + department filter
+- 📃 **CSV Export** — One-click employee data export to CSV
+- 📄 **Pagination** — Server-side pagination on employees and tasks
 
-### AI Workforce Intelligence
-- 📈 **Productivity Scoring** — Weighted formula: 70% completion rate + 30% deadline adherence
-  - Returns score (0–100) + rating label (Low / Medium / High / Excellent) + trend analysis
+### Advanced Analytics (Recharts)
+- 📈 **Task Completion Trend** — 14-day line chart with daily granularity
+- 📊 **Department Productivity** — Bar chart comparing completion rates across departments
+- 🍩 **Task Status Distribution** — Donut chart (assigned / in_progress / completed)
+- 🔠 **Skill Coverage** — Horizontal bar chart showing top 8 skills by frequency
+- 🏆 **Performance Leaderboard** — Ranked table with color-coded progress bars
+
+### AI Workforce Intelligence (4 Features)
+- 📈 **Productivity Scoring** — Weighted formula: 40% completion rate + 30% deadline adherence + 20% activity recency + 10% volume bonus
+  - Returns score (0–100) + rating (Exceptional / Strong / Average / Low / Needs Improvement)
 - 🧩 **Skill Gap Detection** — Compares employee skills vs role requirements
-  - Returns missing skills + match percentage + suggested courses
-  - Seeded with 8 role profiles (Frontend Dev, Backend Dev, DevOps, etc.)
+  - Missing skills + match percentage + suggested courses (8 role profiles seeded)
 - ⚡ **Smart Task Assignment** — AI-powered employee recommendation for new tasks
-  - Ranks all employees by: 50% skill match + 30% workload availability + 20% productivity history
-  - Returns top 3 candidates with composite scores and human-readable reasoning
-- 📉 **Performance Trend Prediction** — 4-week rolling window analysis per employee
-  - Weekly completion counts with visual bar charts
-  - Returns: `improving` / `stable` / `declining` trend indicator with delta value
-  - Displayed via ↑ / → / ↓ indicators on employee table
+  - 50% skill match + 30% workload availability + 20% productivity history
+  - Returns top 3 candidates with composite scores and reasoning
+- 📉 **Performance Trend** — Dedicated 4-week rolling window analysis per employee
+  - Weekly completion counts → `improving` / `stable` / `declining` trend with delta
+  - Shows ↑ / → / ↓ indicators on employee table
+- 🟢🟡🔴 **Workload Indicators** — Per-employee workload status (Available / Busy / Overloaded) with dashboard widget
 
 ### Web3 Integration
-- 🦊 **MetaMask Wallet Connect** — One-click wallet connection with Sepolia auto-switching
+- 🦊 **MetaMask Wallet Connect** — One-click connection with Sepolia auto-switching
 - ⛓️ **On-Chain Task Logging** — Task completion events logged to Ethereum Sepolia testnet
-- 🔗 **Etherscan Links** — Transaction hashes displayed on completed tasks with explorer links
-- 📝 **Smart Contract** — Solidity contract for permanent task completion records
+- 💰 **Payroll Proof On-Chain** — Mark payroll per employee per period, store tx hash, Etherscan links
+- 🔗 **Etherscan Links** — Transaction hashes displayed on completed tasks and payroll records
+- 📝 **Smart Contract** — `TaskLogger.sol` for permanent task completion + payroll records
 
 ### UI/UX
-- 🌑 **Enterprise Dark Theme** — Clean zinc/slate design with subtle borders and minimal animations
-- 🎨 **Custom Design System** — Purpose-built CSS with stat cards, badges, modals, and progress bars
-- 📱 **Responsive Layout** — Fixed sidebar navigation with Inter font typography
-- 🔔 **Toast Notifications** — Real-time feedback for all user actions
-- 💥 **Error Boundary** — Graceful crash recovery with refresh option
-- 🔍 **404 Page** — Styled page-not-found with navigation back to dashboard
-- 👤 **Employee Profiles** — Click-to-view detail panel with AI score, trend chart, and wallet link
+- 🌗 **Dark / Light Theme Toggle** — Top-right header toggle, persists via localStorage
+- 🎨 **Custom Design System** — CSS custom properties, stat cards, badges, modals, progress bars
+- 📱 **Responsive Layout** — Fixed sidebar + mobile hamburger menu
+- 🔔 **Toast Notifications** — Real-time feedback for all actions
+- 💥 **Error Boundary** — Graceful crash recovery
+- 🔍 **404 Page** — Styled not-found page
+- 👤 **Employee Profiles** — Detail panel with AI score, trend chart, weekly performance bars, payroll history, wallet link
 
 ---
 
@@ -83,21 +95,17 @@ npm install
 npm start               # Starts on http://localhost:5000
 ```
 
-### 3. Seed demo data (optional)
-```bash
-cd server
-node seed.js             # Creates 15 employees, 30 tasks across 6 departments (admin@rizetech.com / demo123)
-```
+> The server auto-seeds demo data on first run if the database is empty.
 
-### 4. Set up the frontend
+### 3. Set up the frontend
 ```bash
 cd client
 npm install
 npm run dev             # Starts on http://localhost:5173
 ```
 
-### 5. Open the app
-Navigate to `http://localhost:5173`. Login with `admin@rizetech.com` / `demo123` (if seeded) or register a new org.
+### 4. Open the app
+Navigate to `http://localhost:5173`. Login with `admin@rizetech.com` / `demo123` or register a new organization.
 
 ---
 
@@ -112,18 +120,19 @@ Navigate to `http://localhost:5173`. Login with `admin@rizetech.com` / `demo123`
 ### Employees
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/employees` | Add employee |
-| GET | `/api/employees` | List all employees |
+| POST | `/api/employees` | Add employee (validated) |
+| GET | `/api/employees` | List employees (search, pagination) |
 | GET | `/api/employees/:id` | Get single employee |
 | PUT | `/api/employees/:id` | Update employee |
 | DELETE | `/api/employees/:id` | Remove employee |
+| GET | `/api/employees/export/csv` | Export employees to CSV |
 
 ### Tasks
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `/api/tasks` | Assign task to employee |
-| GET | `/api/tasks` | List tasks (filterable by employee/status) |
-| PUT | `/api/tasks/:id/status` | Update task status |
+| GET | `/api/tasks` | List tasks (filter by employee/status, paginated) |
+| PUT | `/api/tasks/:id/status` | Update task status (validated transitions) |
 | PUT | `/api/tasks/:id/tx-hash` | Store blockchain tx hash |
 
 ### Dashboard
@@ -131,13 +140,31 @@ Navigate to `http://localhost:5173`. Login with `admin@rizetech.com` / `demo123`
 |---|---|---|
 | GET | `/api/dashboard/stats` | Organization-wide statistics |
 
+### Analytics
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/analytics` | All analytics data (5 chart datasets) |
+
 ### AI Intelligence
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/ai/productivity/:employeeId` | Productivity score + trend |
-| GET | `/api/ai/skill-gap/:employeeId` | Skill gap analysis + courses |
+| GET | `/api/ai/productivity/:id` | Productivity score (0-100) |
+| GET | `/api/ai/skill-gap/:id` | Skill gap analysis + courses |
 | GET | `/api/ai/suggest-assignment?skills=X,Y` | Smart task assignment — top 3 candidates |
-| GET | `/api/ai/trend/:employeeId` | 4-week rolling performance trend |
+| GET | `/api/ai/trend/:id` | 4-week performance trend |
+| GET | `/api/ai/workload` | Team workload (Available/Busy/Overloaded) |
+
+### Payroll
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/payroll` | Create payroll record |
+| GET | `/api/payroll/:employeeId` | Get employee payroll history |
+| PUT | `/api/payroll/:id/tx` | Store payroll tx hash |
+
+### System
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/health` | Health check with uptime + memory diagnostics |
 
 ---
 
@@ -145,52 +172,57 @@ Navigate to `http://localhost:5173`. Login with `admin@rizetech.com` / `demo123`
 
 ### Productivity Score
 ```
-Base Score = (completed_tasks / total_assigned_tasks) × 100
+Completion Rate    = (completed / total_tasks) × 100              [weight: 40%]
+Deadline Adherence = (on_time / tasks_with_deadline) × 100        [weight: 30%]
+Recency Bonus      = days_since_last_completion < 7 ? 100 : decay [weight: 20%]
+Volume Bonus       = min(total_tasks × 10, 100)                   [weight: 10%]
 
-Deadline Adherence = (on_time_completions / tasks_with_deadlines) × 100
-
-Final Score = (Base Score × 0.7) + (Deadline Adherence × 0.3)
+Final Score = (Completion × 0.4) + (Deadline × 0.3) + (Recency × 0.2) + (Volume × 0.1)
 ```
 
-- **Excellent** (85–100): Consistently delivers on time
-- **High** (70–84): Strong performance with room for improvement
-- **Medium** (50–69): Average performance
-- **Low** (0–49): Needs attention
-
-Includes **30-day trend analysis** (improving / stable / declining) — this is essentially **Performance Trend Prediction** embedded directly into the scoring engine.
+- **Exceptional** (85–100): Consistently delivers on time
+- **Strong** (70–84): Strong performance
+- **Average** (50–69): Meeting expectations
+- **Low** (30–49): Needs attention
+- **Needs Improvement** (0–29): Urgent intervention needed
 
 ### Skill Gap Detection
-- Maintains a `role_requirements` table with required skills per role
+- Maintains a `role_requirements` table with required skills per role (8 roles seeded)
 - Compares employee skills (case-insensitive) against role requirements
 - Returns **match percentage**, **missing skills**, and **suggested courses**
-- Classifies employee as: Expert / Advanced / Intermediate / Beginner
 
 ### Smart Task Assignment
 ```
-For each employee:
-  Skill Score     = (matched_skills / required_skills) × 100   [weight: 50%]
-  Workload Score  = max(0, 100 - active_tasks × 25)             [weight: 30%]
-  Productivity    = (completed_tasks / total_tasks) × 100       [weight: 20%]
+Skill Score     = (matched_skills / required_skills) × 100   [weight: 50%]
+Workload Score  = max(0, 100 - active_tasks × 25)            [weight: 30%]
+Productivity    = (completed / total_tasks) × 100             [weight: 20%]
 
 Composite = (Skill × 0.5) + (Workload × 0.3) + (Productivity × 0.2)
 ```
 
-Returns top 3 employees ranked by composite score with human-readable reasoning.
+### Performance Trend
+- 4-week rolling window with weekly completion counts
+- Computes delta between recent and older weeks
+- delta > 0 → `improving`, delta = 0 → `stable`, delta < 0 → `declining`
+
+### Workload Assessment
+- Counts active tasks (assigned + in_progress) per employee
+- ≥ 4 tasks → 🔴 Overloaded, 2-3 tasks → 🟡 Busy, 0-1 tasks → 🟢 Available
 
 ---
 
 ## ⛓️ Web3 Integration Explained
 
 ### Architecture
-1. **MetaMask Connection** — Frontend connects to user's wallet using ethers.js
+1. **MetaMask Connection** — Frontend connects via ethers.js
 2. **Sepolia Network** — Auto-switches to Sepolia testnet (chain ID: 11155111)
-3. **On-Chain Logging** — When a task is marked "completed", the event is encoded as JSON and sent as transaction data to Sepolia
-4. **Tx Hash Storage** — The transaction hash is stored in the database and displayed with an Etherscan link
+3. **On-Chain Logging** — Task completion + payroll proof logged as transaction data
+4. **Tx Hash Storage** — Stored in database, displayed with Etherscan links
 
-### Smart Contract (Bonus)
+### Smart Contract
 Located at `contracts/TaskLogger.sol`:
 - `logTaskCompletion(address employee, uint taskId)` — Emits `TaskCompleted` event
-- Prevents duplicate logging
+- `logPayroll(address employee, uint amount)` — Emits `PayrollLogged` event
 - Deploy via [Remix IDE](https://remix.ethereum.org) to Sepolia
 
 ---
@@ -199,77 +231,99 @@ Located at `contracts/TaskLogger.sol`:
 
 ```
 Rise_os/
-├── server/                          # Backend API
-│   ├── config/db.js                 # SQLite database + schema + role_requirements seed
-│   ├── middleware/auth.js           # JWT authentication middleware
+├── server/                              # Backend API
+│   ├── config/db.js                     # SQLite schema + WAL mode + role_requirements
+│   ├── middleware/
+│   │   ├── auth.js                      # JWT authentication middleware
+│   │   └── validate.js                  # express-validator input sanitization
 │   ├── controllers/
-│   │   ├── authController.js        # Register + Login
-│   │   ├── employeeController.js    # Employee CRUD
-│   │   ├── taskController.js        # Task management + Web3 tx storage
-│   │   ├── dashboardController.js   # Dashboard statistics
-│   │   └── aiController.js          # AI: productivity + skill gap + smart assignment
-│   ├── routes/                      # Express route files
-│   ├── seed.js                      # Demo data (8 employees, 12 tasks) — auto-runs on empty DB
-│   ├── server.js                    # Entry point (auto-seeds if DB empty)
-│   └── .env.example                 # Environment template
-├── client/                          # Frontend SPA
+│   │   ├── authController.js            # Register + Login
+│   │   ├── employeeController.js        # Employee CRUD + CSV export
+│   │   ├── taskController.js            # Task management + Web3 tx storage
+│   │   ├── dashboardController.js       # Dashboard statistics
+│   │   ├── aiController.js              # AI: productivity + skill gap + assignment + trend + workload
+│   │   ├── analyticsController.js       # Analytics: 5 chart datasets
+│   │   └── payrollController.js         # Payroll CRUD + tx hash storage
+│   ├── routes/                          # Express route files (auth, employees, tasks, dashboard, ai, analytics, payroll)
+│   ├── seed.js                          # Demo data (15 employees, 30 tasks) — auto-runs on empty DB
+│   ├── server.js                        # Entry point + middleware chain + auto-seed
+│   └── .env.example                     # Environment template
+├── client/                              # Frontend SPA
 │   ├── src/
-│   │   ├── context/AuthContext.jsx   # Authentication state
-│   │   ├── services/api.js           # Axios + JWT interceptor + production auto-detect
-│   │   ├── services/web3.js          # MetaMask + ethers.js + Sepolia integration
-│   │   ├── components/Layout.jsx     # Sidebar navigation + wallet status
-│   │   ├── components/WalletConnect.jsx  # MetaMask connect/disconnect UI
-│   │   └── pages/                    # Login, Dashboard, Employees, Tasks
-│   ├── index.html                   # SEO-optimized entry
-│   └── vite.config.js               # Vite + Tailwind + API proxy
-├── contracts/TaskLogger.sol          # Solidity smart contract
-├── GTM_STRATEGY.md                   # Go-to-Market plan
-└── README.md                         # This file
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx          # Authentication state
+│   │   │   └── ThemeContext.jsx         # Dark/light theme (localStorage)
+│   │   ├── services/
+│   │   │   ├── api.js                   # Axios + JWT interceptor + production auto-detect
+│   │   │   └── web3.js                  # MetaMask + ethers.js + Sepolia integration
+│   │   ├── components/
+│   │   │   ├── Layout.jsx               # Sidebar nav + top header with theme toggle
+│   │   │   ├── WalletConnect.jsx        # MetaMask connect/disconnect UI
+│   │   │   └── ErrorBoundary.jsx        # Crash recovery
+│   │   └── pages/
+│   │       ├── LoginPage.jsx            # Auth UI
+│   │       ├── DashboardPage.jsx        # Stats + workload widget + activity feed
+│   │       ├── EmployeesPage.jsx        # Employee table + profiles + payroll UI
+│   │       ├── TasksPage.jsx            # Task board + Web3 logging
+│   │       ├── AnalyticsPage.jsx        # 5 Recharts visualizations
+│   │       └── NotFoundPage.jsx         # 404
+│   ├── index.html                       # SEO-optimized entry
+│   └── vite.config.js                   # Vite config + API proxy
+├── contracts/TaskLogger.sol             # Solidity smart contract
+├── ARCHITECTURE.md                      # System design document
+├── GTM_STRATEGY.md                      # Go-to-Market plan
+└── README.md                            # This file
 ```
 
 ---
 
 ## 🛡️ Scalability Thinking
 
-> **Note:** SQLite is used intentionally for demo/assessment portability — zero-config, self-contained, no external DB setup needed. The server auto-seeds demo data on startup if the database is empty, ensuring evaluators always see a populated app even after Render's ephemeral filesystem resets.
+> **SQLite** is used intentionally for demo portability — zero-config, self-contained, auto-seeds on startup. See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed scaling rationale.
 
 ### Production Migration Path (100K Employees / 1M Task Logs):
-- **Database**: Migrate to PostgreSQL with connection pooling (pg-pool), add indexes on `employee_id`, `org_id`, `status`
-- **Caching**: Redis for dashboard stats and frequently accessed data (TTL-based invalidation)
-- **Pagination**: Server-side cursor pagination for employee/task lists
-- **Queue Processing**: Bull/BullMQ for background Web3 transactions and email notifications
+- **Database**: PostgreSQL + connection pool (pg-pool), indexes on `employee_id`, `org_id`, `status`
+- **Caching**: Redis for dashboard stats (TTL-based invalidation)
 - **Search**: Elasticsearch for full-text employee/skill search
-- **CDN**: Static asset delivery via CloudFront/Vercel Edge
-- **Monitoring**: Prometheus + Grafana for API latency, error rates, and throughput
-- **Auth**: Rotate JWT secrets, add refresh tokens, rate-limit login endpoint
+- **Queue**: Bull/BullMQ for background Web3 transactions
+- **CDN**: Static assets via CloudFront/Vercel Edge
+- **Monitoring**: Prometheus + Grafana for API metrics
+- **Auth**: Refresh tokens, JWT secret rotation, rate-limited login
 
 ---
 
 ## ❓ FAQ
 
-**Why 70/30 weighting for productivity?**
-Completion rate (70%) is the primary signal — it directly measures output. Deadline adherence (30%) rewards punctuality without over-penalizing employees whose deadlines may have been unrealistic.
+**Why 40/30/20/10 weighting for productivity?**
+Completion rate (40%) is the primary output signal. Deadline adherence (30%) rewards punctuality. Activity recency (20%) ensures recently active employees score higher. Volume bonus (10%) rewards employees handling larger task loads.
 
 **What happens when an employee has zero tasks?**
-The API returns `score: 0`, `rating: 'No data'`, and a helpful message: *"No tasks assigned yet."* — no misleading score is generated.
+The API returns `score: 0`, `rating: 'Needs Improvement'`, and a message: *"No tasks assigned yet."* — no misleading score is generated.
 
 **How is "active employee" defined?**
-Any employee with `is_active = 1` in the database. Deactivation is a soft-delete that preserves task history.
+An employee who currently has at least one task with `status = 'in_progress'`. This is a dynamic measure of who is actively working, not a static database flag.
 
 **What is the JWT expiry?**
-24 hours. After expiry, the frontend's Axios interceptor automatically redirects to login with the stored token cleared.
+24 hours. After expiry, the Axios interceptor automatically redirects to login.
 
 **Why SQLite instead of PostgreSQL?**
-SQLite is used for **demo portability**: zero configuration, no external database service, works out-of-the-box on any system. The server auto-seeds demo data on startup if the database is empty, ensuring the app is never blank. For production: migrate to PostgreSQL (Render provides free PG instances), add connection pooling, and run migrations.
+Zero-config demo deployment. Auto-seeds on empty DB so evaluators always see data. Production path: PostgreSQL + connection pooling.
 
-**Is this production-ready?**
-For demo/assessment purposes, yes. For production: migrate SQLite → PostgreSQL, add rate limiting, input sanitization middleware, refresh tokens, and deploy behind HTTPS.
+**Does the theme persist across refreshes?**
+Yes, theme preference is stored in `localStorage` and restored on load.
 
 ---
 
 ## 📸 Screenshots
 
-> Screenshots coming soon — see the [Live Demo](https://ai-hrms-iota.vercel.app) for the full experience.
+| Dashboard | Analytics |
+|---|---|
+| ![Dashboard](./screenshots/dashboard.png) | ![Analytics](./screenshots/analytics.png) |
+
+| Employees | Tasks |
+|---|---|
+| ![Employees](./screenshots/employees.png) | ![Tasks](./screenshots/tasks.png) |
+
 > Demo credentials: `admin@rizetech.com` / `demo123`
 
 ---

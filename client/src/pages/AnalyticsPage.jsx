@@ -1,20 +1,46 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { HiOutlineChartBar } from 'react-icons/hi';
+import {
+    LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
+
+/* ── helpers ─────────────────────────────────────────────── */
+const fillMissingDays = (data) => {
+    const result = [];
+    for (let i = 13; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const found = data.find(r => r.date === dateStr);
+        result.push({ date: dateStr.slice(5), count: found ? found.count : 0 });
+    }
+    return result;
+};
+
+const STATUS_COLORS = { assigned: '#f59e0b', in_progress: '#3b82f6', completed: '#22c55e' };
+const scoreColor = (s) => s >= 70 ? 'var(--success)' : s >= 40 ? 'var(--warning)' : 'var(--danger)';
+
+/* ── tooltip style (theme-aware) ─────────────────────────── */
+const tipStyle = {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border-default)',
+    borderRadius: 8,
+    color: 'var(--text-primary)',
+    fontSize: 12
+};
 
 export default function AnalyticsPage() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => { fetchStats(); }, []);
-
-    const fetchStats = async () => {
-        try {
-            const res = await api.get('/dashboard/stats');
-            setData(res.data);
-        } catch (err) { console.error('Failed to load analytics:', err); }
-        finally { setLoading(false); }
-    };
+    useEffect(() => {
+        api.get('/analytics')
+            .then(res => setData(res.data))
+            .catch(err => console.error('Analytics load failed:', err))
+            .finally(() => setLoading(false));
+    }, []);
 
     if (loading) {
         return (
@@ -27,6 +53,20 @@ export default function AnalyticsPage() {
         );
     }
 
+    const { trend = [], departments = [], statusDist = [], skills = [], performers = [] } = data || {};
+
+    /* derived data */
+    const trendData = fillMissingDays(trend);
+    const deptData = departments.map(d => ({
+        department: d.department,
+        score: d.total_tasks > 0 ? Math.round((d.completed_tasks / d.total_tasks) * 100) : 0
+    }));
+    const pieData = statusDist.map(s => ({
+        name: s.status.replace('_', ' '),
+        value: s.count,
+        color: STATUS_COLORS[s.status] || 'var(--accent)'
+    }));
+
     return (
         <div className="animate-in">
             {/* Header */}
@@ -34,114 +74,112 @@ export default function AnalyticsPage() {
                 <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <HiOutlineChartBar size={24} /> Analytics
                 </h1>
-                <p style={{ color: 'var(--text-dim)', fontSize: 13, marginTop: 4 }}>Department performance, skills, and workforce insights</p>
+                <p style={{ color: 'var(--text-dim)', fontSize: 13, marginTop: 4 }}>Real-time workforce intelligence — last 14 days</p>
             </div>
 
-            {/* Top Row: Department Performance + Top Performers */}
-            <div className="stat-grid-responsive" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                {/* Department Performance */}
+            {/* Row 1: Line Chart + Bar Chart */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                {/* Task Completion Trend */}
                 <div className="card" style={{ padding: 22 }}>
-                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Department Performance</h3>
-                    {data?.departmentStats?.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                            {data.departmentStats.map((d) => {
-                                const pct = d.totalTasks > 0 ? Math.round((d.completedTasks / d.totalTasks) * 100) : 0;
-                                return (
-                                    <div key={d.department}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{d.department}</span>
-                                            <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{d.employees} members · {d.completedTasks}/{d.totalTasks} tasks</span>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Task Completion Trend</h3>
+                    <ResponsiveContainer width="100%" height={240}>
+                        <LineChart data={trendData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                            <XAxis dataKey="date" stroke="var(--text-muted)" tick={{ fontSize: 11 }} />
+                            <YAxis stroke="var(--text-muted)" tick={{ fontSize: 11 }} allowDecimals={false} />
+                            <Tooltip contentStyle={tipStyle} />
+                            <Line type="monotone" dataKey="count" stroke="var(--accent)" strokeWidth={2}
+                                dot={{ fill: 'var(--accent)', r: 3 }} activeDot={{ r: 5 }} name="Completed" />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Department Productivity */}
+                <div className="card" style={{ padding: 22 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Department Productivity</h3>
+                    <ResponsiveContainer width="100%" height={240}>
+                        <BarChart data={deptData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                            <XAxis dataKey="department" stroke="var(--text-muted)" tick={{ fontSize: 11 }} />
+                            <YAxis stroke="var(--text-muted)" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
+                            <Tooltip formatter={(v) => [`${v}%`, 'Completion Rate']} contentStyle={tipStyle} />
+                            <Bar dataKey="score" fill="#22c55e" radius={[4, 4, 0, 0]} name="Completion %" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            {/* Row 2: Donut + Skills + Leaderboard */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                {/* Task Status Distribution */}
+                <div className="card" style={{ padding: 22 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Task Status</h3>
+                    <ResponsiveContainer width="100%" height={240}>
+                        <PieChart>
+                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90}
+                                dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                labelLine={{ stroke: 'var(--text-muted)' }}>
+                                {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                            </Pie>
+                            <Tooltip contentStyle={tipStyle} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 8 }}>
+                        {pieData.map(p => (
+                            <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)' }}>
+                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color }} />
+                                {p.name}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Top Skills */}
+                <div className="card" style={{ padding: 22 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Skill Coverage</h3>
+                    <ResponsiveContainer width="100%" height={260}>
+                        <BarChart data={skills} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                            <XAxis type="number" stroke="var(--text-muted)" allowDecimals={false} tick={{ fontSize: 11 }} />
+                            <YAxis type="category" dataKey="skill" stroke="var(--text-muted)" width={90} tick={{ fontSize: 11 }} />
+                            <Tooltip contentStyle={tipStyle} />
+                            <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} name="Employees" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Employee Leaderboard */}
+                <div className="card" style={{ padding: 22 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Performance Leaderboard</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 270, overflowY: 'auto' }}>
+                        {performers.map((emp, i) => {
+                            const pct = emp.total > 0 ? Math.round((emp.completed / emp.total) * 100) : 0;
+                            return (
+                                <div key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', width: 24, textAlign: 'center' }}>#{i + 1}</span>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{emp.name}</span>
+                                            <span style={{ fontSize: 12, fontWeight: 600, color: scoreColor(pct) }}>{pct}%</span>
                                         </div>
-                                        <div style={{ height: 6, background: 'var(--border-subtle)', borderRadius: 3 }}>
+                                        <div style={{ height: 4, background: 'var(--border-subtle)', borderRadius: 2 }}>
                                             <div style={{
-                                                height: '100%', borderRadius: 3,
+                                                height: '100%', borderRadius: 2, transition: 'width 0.5s ease',
                                                 width: `${pct}%`,
-                                                background: pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--warning)' : 'var(--accent)',
-                                                transition: 'width 0.5s ease'
+                                                background: pct >= 70 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#ef4444'
                                             }} />
                                         </div>
-                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>{pct}% completion</div>
+                                        <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{emp.role} · {emp.department}</span>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <p style={{ color: 'var(--text-faint)', fontSize: 13 }}>No department data.</p>
-                    )}
-                </div>
-
-                {/* Top Performers */}
-                <div className="card" style={{ padding: 22 }}>
-                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Top Performers</h3>
-                    {data?.topPerformers?.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {data.topPerformers.map((p, i) => {
-                                const pct = p.total > 0 ? Math.round((p.completed / p.total) * 100) : 0;
-                                return (
-                                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <div style={{
-                                            width: 28, height: 28, borderRadius: '50%',
-                                            background: i === 0 ? '#eab308' : i === 1 ? '#a1a1aa' : i === 2 ? '#cd7f32' : 'var(--bg-hover)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: 12, fontWeight: 700,
-                                            color: i < 3 ? '#09090b' : 'var(--text-muted)'
-                                        }}>{i + 1}</div>
-                                        <div style={{ flex: 1 }}>
-                                            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</p>
-                                            <p style={{ fontSize: 11, color: 'var(--text-dim)' }}>{p.role} · {p.department}</p>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--success)' }}>{p.completed}/{p.total}</span>
-                                            <p style={{ fontSize: 10, color: 'var(--text-dim)' }}>{pct}%</p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <p style={{ color: 'var(--text-faint)', fontSize: 13 }}>Add employees to see rankings.</p>
-                    )}
-                </div>
-            </div>
-
-            {/* Bottom Row: Skill Distribution + Departments */}
-            <div className="stat-grid-responsive" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                {/* Skill Distribution */}
-                <div className="card" style={{ padding: 22 }}>
-                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Skill Distribution</h3>
-                    {data?.skillDistribution?.length > 0 ? (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                            {data.skillDistribution.map((s) => (
-                                <span key={s.skill} className="badge badge-skill" style={{
-                                    padding: '5px 12px', borderRadius: 6, fontSize: 12
-                                }}>
-                                    {s.skill} <span style={{ opacity: 0.6 }}>×{s.count}</span>
-                                </span>
-                            ))}
-                        </div>
-                    ) : (
-                        <p style={{ color: 'var(--text-faint)', fontSize: 13 }}>No skill data.</p>
-                    )}
-                </div>
-
-                {/* Departments Overview */}
-                <div className="card" style={{ padding: 22 }}>
-                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Department Overview</h3>
-                    {data?.departments?.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {data.departments.map((d) => (
-                                <div key={d.department} style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: 8
-                                }}>
-                                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{d.department}</span>
-                                    <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>{d.count} member{d.count !== 1 ? 's' : ''}</span>
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p style={{ color: 'var(--text-faint)', fontSize: 13 }}>No departments yet.</p>
-                    )}
+                            );
+                        })}
+                        {performers.length === 0 && (
+                            <p style={{ color: 'var(--text-faint)', fontSize: 13, textAlign: 'center', padding: 20 }}>
+                                Assign tasks to see performance rankings
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

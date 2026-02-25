@@ -311,3 +311,40 @@ exports.getPerformanceTrend = (req, res) => {
         res.status(500).json({ error: 'Internal server error.' });
     }
 };
+
+// Workload Insights — team workload overview
+exports.getWorkload = (req, res) => {
+    try {
+        const org_id = req.org.id;
+
+        const employees = db.prepare(`
+            SELECT e.id, e.name, e.role, e.department,
+                COUNT(CASE WHEN t.status IN ('assigned', 'in_progress') THEN 1 END) as active_tasks
+            FROM employees e
+            LEFT JOIN tasks t ON e.id = t.employee_id
+            WHERE e.org_id = ?
+            GROUP BY e.id
+            ORDER BY active_tasks DESC
+        `).all(org_id);
+
+        const workload = employees.map(emp => {
+            let level, color;
+            if (emp.active_tasks >= 4) { level = 'Overloaded'; color = 'red'; }
+            else if (emp.active_tasks >= 2) { level = 'Busy'; color = 'yellow'; }
+            else { level = 'Available'; color = 'green'; }
+            return { ...emp, level, color };
+        });
+
+        const summary = {
+            overloaded: workload.filter(w => w.level === 'Overloaded').length,
+            busy: workload.filter(w => w.level === 'Busy').length,
+            available: workload.filter(w => w.level === 'Available').length,
+            total: workload.length
+        };
+
+        res.json({ workload, summary });
+    } catch (err) {
+        console.error('Workload error:', err);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+};

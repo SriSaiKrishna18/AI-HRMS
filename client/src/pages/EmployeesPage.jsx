@@ -16,6 +16,9 @@ export default function EmployeesPage() {
     const [search, setSearch] = useState('');
     const [deptFilter, setDeptFilter] = useState('');
     const [profileEmp, setProfileEmp] = useState(null);
+    const [payrollRecords, setPayrollRecords] = useState([]);
+    const [payrollForm, setPayrollForm] = useState({ amount: '', period: '', notes: '' });
+    const [savingPayroll, setSavingPayroll] = useState(false);
 
     const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
     const filtered = employees.filter(e => {
@@ -130,6 +133,35 @@ export default function EmployeesPage() {
 
     const scoreColor = (s) => s >= 85 ? '#22c55e' : s >= 70 ? '#3b82f6' : s >= 50 ? '#eab308' : 'var(--danger)';
 
+    const loadPayroll = async (empId) => {
+        try {
+            const res = await api.get(`/payroll/${empId}`);
+            setPayrollRecords(res.data.records || []);
+        } catch { setPayrollRecords([]); }
+    };
+
+    const handleMarkPayroll = async () => {
+        if (!profileEmp || !payrollForm.amount || !payrollForm.period) return;
+        setSavingPayroll(true);
+        try {
+            await api.post('/payroll', {
+                employee_id: profileEmp.id,
+                amount: parseFloat(payrollForm.amount),
+                period: payrollForm.period,
+                notes: payrollForm.notes || null
+            });
+            showToast('Payroll recorded');
+            setPayrollForm({ amount: '', period: '', notes: '' });
+            loadPayroll(profileEmp.id);
+        } catch { showToast('Payroll save failed', 'error'); }
+        finally { setSavingPayroll(false); }
+    };
+
+    const openProfile = (emp) => {
+        setProfileEmp(emp);
+        loadPayroll(emp.id);
+    };
+
     if (loading) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
@@ -194,7 +226,7 @@ export default function EmployeesPage() {
                                             fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)'
                                         }}>{emp.name.charAt(0)}</div>
                                         <div>
-                                            <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => setProfileEmp(emp)}>{emp.name}</p>
+                                            <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => openProfile(emp)}>{emp.name}</p>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                                 <p style={{ fontSize: 11, color: 'var(--text-dim)' }}>{emp.email}</p>
                                                 {emp.wallet_address && (
@@ -459,6 +491,38 @@ export default function EmployeesPage() {
                                     <span key={s} className="badge badge-skill">{s}</span>
                                 ))}
                             </div>
+                        </div>
+
+                        {/* Payroll Proof Section */}
+                        <div style={{ marginBottom: 14, padding: 14, background: 'var(--bg-elevated)', borderRadius: 10 }}>
+                            <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 10 }}>💰 Payroll Proof</p>
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                                <input type="number" placeholder="Amount (₹)" value={payrollForm.amount}
+                                    onChange={e => setPayrollForm({ ...payrollForm, amount: e.target.value })}
+                                    style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-default)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 12 }} />
+                                <input type="month" value={payrollForm.period}
+                                    onChange={e => setPayrollForm({ ...payrollForm, period: e.target.value })}
+                                    style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-default)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 12 }} />
+                            </div>
+                            <button onClick={handleMarkPayroll} disabled={savingPayroll || !payrollForm.amount || !payrollForm.period}
+                                className="btn-primary" style={{ width: '100%', padding: '8px 0', fontSize: 12 }}>
+                                {savingPayroll ? 'Saving...' : 'Mark Payroll'}
+                            </button>
+                            {payrollRecords.length > 0 && (
+                                <div style={{ marginTop: 10, maxHeight: 120, overflowY: 'auto' }}>
+                                    {payrollRecords.map(r => (
+                                        <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: 11 }}>
+                                            <span style={{ color: 'var(--text-primary)' }}>₹{r.amount.toLocaleString()} · {r.period}</span>
+                                            {r.tx_hash ? (
+                                                <a href={`https://sepolia.etherscan.io/tx/${r.tx_hash}`} target="_blank" rel="noreferrer"
+                                                    style={{ color: 'var(--accent)', fontSize: 10 }}>🔗 On-chain</a>
+                                            ) : (
+                                                <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>Pending</span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 12 }}>

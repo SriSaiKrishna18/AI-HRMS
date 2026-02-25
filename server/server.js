@@ -37,6 +37,8 @@ const employeeRoutes = require('./routes/employees');
 const taskRoutes = require('./routes/tasks');
 const dashboardRoutes = require('./routes/dashboard');
 const aiRoutes = require('./routes/ai');
+const analyticsRoutes = require('./routes/analytics');
+const payrollRoutes = require('./routes/payroll');
 
 // Auto-seed if database is empty (handles Render ephemeral filesystem wipe)
 const db = require('./config/db');
@@ -97,6 +99,8 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/payroll', payrollRoutes);
 
 // 404 handler
 app.use((req, res) => {

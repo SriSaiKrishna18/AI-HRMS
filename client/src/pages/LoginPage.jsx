@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { HiOutlineLightningBolt, HiOutlineShieldCheck, HiOutlineCube, HiOutlineChartBar } from 'react-icons/hi';
 
 export default function LoginPage() {
-    const { login } = useAuth();
+    const { login, register } = useAuth();
     const [isRegister, setIsRegister] = useState(false);
     const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
     const [error, setError] = useState('');
@@ -27,14 +27,11 @@ export default function LoginPage() {
         }
 
         try {
-            const endpoint = isRegister ? '/auth/register' : '/auth/login';
-            const body = isRegister
-                ? { name: form.name, email: form.email, password: form.password }
-                : { email: form.email, password: form.password };
-
-            const { default: api } = await import('../services/api');
-            const res = await api.post(endpoint, body);
-            login(res.data.token, res.data.org);
+            if (isRegister) {
+                await register(form.name, form.email, form.password);
+            } else {
+                await login(form.email, form.password);
+            }
         } catch (err) {
             setError(err.response?.data?.error || 'Something went wrong. Please try again.');
         } finally {

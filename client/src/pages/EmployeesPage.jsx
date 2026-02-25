@@ -10,10 +10,12 @@ export default function EmployeesPage() {
     const [submitting, setSubmitting] = useState(false);
     const [form, setForm] = useState({ name: '', email: '', role: '', department: '', skills: '', wallet_address: '' });
     const [aiScores, setAiScores] = useState({});
+    const [trends, setTrends] = useState({});
     const [aiPanel, setAiPanel] = useState(null);
     const [toast, setToast] = useState(null);
     const [search, setSearch] = useState('');
     const [deptFilter, setDeptFilter] = useState('');
+    const [profileEmp, setProfileEmp] = useState(null);
 
     const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
     const filtered = employees.filter(e => {
@@ -41,6 +43,7 @@ export default function EmployeesPage() {
             const emps = res.data.employees;
             setEmployees(emps);
             loadAiScores(emps);
+            loadTrends(emps);
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
     };
@@ -56,6 +59,27 @@ export default function EmployeesPage() {
             })
         );
         setAiScores(scores);
+    };
+
+    const loadTrends = async (emps) => {
+        const t = {};
+        await Promise.allSettled(
+            emps.map(async (emp) => {
+                try {
+                    const res = await api.get(`/ai/trend/${emp.id}`);
+                    t[emp.id] = res.data;
+                } catch { t[emp.id] = null; }
+            })
+        );
+        setTrends(t);
+    };
+
+    const trendIcon = (empId) => {
+        const t = trends[empId];
+        if (!t) return <span style={{ color: '#3f3f46' }}>—</span>;
+        if (t.trend === 'improving') return <span className="trend-up" title={t.summary} style={{ fontWeight: 700, fontSize: 14 }}>↑</span>;
+        if (t.trend === 'declining') return <span className="trend-down" title={t.summary} style={{ fontWeight: 700, fontSize: 14 }}>↓</span>;
+        return <span className="trend-stable" title={t.summary} style={{ fontWeight: 700, fontSize: 14 }}>→</span>;
     };
 
     const showToast = (msg, type = 'success') => {
@@ -153,7 +177,7 @@ export default function EmployeesPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 780 }}>
                     <thead>
                         <tr style={{ borderBottom: '1px solid #27272a' }}>
-                            {['Name', 'Role', 'Department', 'Skills', 'Score', 'AI', 'Actions'].map(h => (
+                            {['Name', 'Role', 'Department', 'Skills', 'Score', 'Trend', 'AI', 'Actions'].map(h => (
                                 <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                             ))}
                         </tr>
@@ -170,7 +194,7 @@ export default function EmployeesPage() {
                                             fontSize: 13, fontWeight: 600, color: '#a1a1aa'
                                         }}>{emp.name.charAt(0)}</div>
                                         <div>
-                                            <p style={{ fontWeight: 600, fontSize: 13, color: '#e4e4e7' }}>{emp.name}</p>
+                                            <p style={{ fontWeight: 600, fontSize: 13, color: '#e4e4e7', cursor: 'pointer' }} onClick={() => setProfileEmp(emp)}>{emp.name}</p>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                                 <p style={{ fontSize: 11, color: '#52525b' }}>{emp.email}</p>
                                                 {emp.wallet_address && (
@@ -203,6 +227,9 @@ export default function EmployeesPage() {
                                             </span>
                                         </div>
                                     ) : <span style={{ fontSize: 12, color: '#3f3f46' }}>—</span>}
+                                </td>
+                                <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                                    {trendIcon(emp.id)}
                                 </td>
                                 <td style={{ padding: '14px 16px' }}>
                                     <div style={{ display: 'flex', gap: 4 }}>
@@ -351,6 +378,92 @@ export default function EmployeesPage() {
                                 )}
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Employee Profile Panel */}
+            {profileEmp && (
+                <div className="modal-overlay" onClick={() => setProfileEmp(null)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#fafafa' }}>Employee Profile</h2>
+                            <button onClick={() => setProfileEmp(null)} className="btn-ghost"><HiOutlineX size={18} /></button>
+                        </div>
+
+                        {/* Profile Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+                            <div style={{
+                                width: 48, height: 48, borderRadius: '50%', background: '#27272a',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 20, fontWeight: 700, color: '#a1a1aa'
+                            }}>{profileEmp.name.charAt(0)}</div>
+                            <div>
+                                <p style={{ fontWeight: 700, fontSize: 16, color: '#fafafa' }}>{profileEmp.name}</p>
+                                <p style={{ fontSize: 12, color: '#71717a' }}>{profileEmp.role} · {profileEmp.department}</p>
+                                {profileEmp.wallet_address && (
+                                    <a href={`https://sepolia.etherscan.io/address/${profileEmp.wallet_address}`} target="_blank" rel="noreferrer"
+                                        style={{ fontSize: 10, color: '#f97316', fontFamily: 'monospace', textDecoration: 'none' }}>
+                                        ⟠ {profileEmp.wallet_address.slice(0, 10)}…{profileEmp.wallet_address.slice(-6)}
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* AI Score + Trend */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+                            <div style={{ padding: 14, background: '#0f0f11', borderRadius: 10, textAlign: 'center' }}>
+                                <p style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', marginBottom: 6 }}>AI Score</p>
+                                <p style={{ fontSize: 28, fontWeight: 800, color: aiScores[profileEmp.id] ? scoreColor(aiScores[profileEmp.id].score) : '#3f3f46' }}>
+                                    {aiScores[profileEmp.id]?.score ?? '—'}
+                                </p>
+                                <p style={{ fontSize: 11, color: '#71717a' }}>{aiScores[profileEmp.id]?.rating || 'Loading...'}</p>
+                            </div>
+                            <div style={{ padding: 14, background: '#0f0f11', borderRadius: 10, textAlign: 'center' }}>
+                                <p style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', marginBottom: 6 }}>Trend</p>
+                                <p style={{ fontSize: 28, fontWeight: 800 }}>{trendIcon(profileEmp.id)}</p>
+                                <p style={{ fontSize: 11, color: '#71717a' }}>
+                                    {trends[profileEmp.id]?.trend || 'Loading...'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Weekly Performance Bars */}
+                        {trends[profileEmp.id]?.weeks && (
+                            <div style={{ marginBottom: 18, padding: 14, background: '#0f0f11', borderRadius: 10 }}>
+                                <p style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', marginBottom: 10 }}>Weekly Completions</p>
+                                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 50 }}>
+                                    {trends[profileEmp.id].weeks.map((w, i) => {
+                                        const maxH = Math.max(...trends[profileEmp.id].weeks.map(wk => wk.completed), 1);
+                                        const h = (w.completed / maxH) * 40 + 6;
+                                        return (
+                                            <div key={i} style={{ flex: 1, textAlign: 'center' }}>
+                                                <div style={{
+                                                    height: h, borderRadius: 3, margin: '0 auto',
+                                                    width: '60%',
+                                                    background: w.completed > 0 ? '#6366f1' : '#27272a',
+                                                }} />
+                                                <p style={{ fontSize: 9, color: '#52525b', marginTop: 4 }}>{w.week}</p>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Skills */}
+                        <div style={{ marginBottom: 14 }}>
+                            <p style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', marginBottom: 8 }}>Skills</p>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                {(profileEmp.skills || []).map(s => (
+                                    <span key={s} className="badge badge-skill">{s}</span>
+                                ))}
+                            </div>
+                        </div>
+
+                        <p style={{ fontSize: 11, color: '#3f3f46', marginTop: 12 }}>
+                            Joined {new Date(profileEmp.created_at).toLocaleDateString()}
+                        </p>
                     </div>
                 </div>
             )}

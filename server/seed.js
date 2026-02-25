@@ -137,10 +137,38 @@ function runSeed() {
     });
     insertTasks();
 
+    console.log('   Seeding payroll records...');
+
+    // ── Payroll Records ──
+    const insertPayroll = db.prepare(
+        'INSERT INTO payroll_records (org_id, employee_id, amount, period, notes, tx_hash) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+
+    const payrollRecords = [
+        { empIdx: 0, amount: 7500, period: '2026-01', notes: 'Monthly salary' },
+        { empIdx: 1, amount: 8200, period: '2026-01', notes: 'Monthly salary' },
+        { empIdx: 2, amount: 7800, period: '2026-01', notes: 'Monthly salary' },
+        { empIdx: 3, amount: 6900, period: '2026-01', notes: 'Monthly salary' },
+        { empIdx: 4, amount: 9100, period: '2026-01', notes: 'Monthly salary + bonus' },
+        { empIdx: 0, amount: 7500, period: '2026-02', notes: 'Monthly salary' },
+        { empIdx: 1, amount: 8200, period: '2026-02', notes: 'Monthly salary' },
+        { empIdx: 2, amount: 7800, period: '2026-02', notes: 'Monthly salary' },
+        { empIdx: 5, amount: 6500, period: '2026-02', notes: 'Monthly salary' },
+        { empIdx: 6, amount: 7200, period: '2026-02', notes: 'Monthly salary' },
+    ];
+
+    const insertPayrolls = db.transaction(() => {
+        for (const p of payrollRecords) {
+            insertPayroll.run(orgId, empIds[p.empIdx], p.amount, p.period, p.notes, null);
+        }
+    });
+    insertPayrolls();
+
     console.log('✅ Seed complete!');
     console.log(`   Organization: RizeTech Solutions (admin@rizetech.com / demo123)`);
     console.log(`   Employees: ${employees.length}`);
     console.log(`   Tasks: ${tasks.length}`);
+    console.log(`   Payroll records: ${payrollRecords.length}`);
     console.log(`   Departments: ${[...new Set(employees.map(e => e.dept))].join(', ')}`);
     console.log(`   Statuses: ${tasks.filter(t => t.status === 'completed').length} completed, ${tasks.filter(t => t.status === 'in_progress').length} in progress, ${tasks.filter(t => t.status === 'assigned').length} assigned`);
 }

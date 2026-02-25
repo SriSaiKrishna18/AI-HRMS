@@ -28,8 +28,8 @@ export default function PayrollPage() {
                 api.get('/payroll'),
                 api.get('/employees')
             ]);
-            setRecords(payrollRes.data);
-            setEmployees(empRes.data);
+            setRecords(Array.isArray(payrollRes.data) ? payrollRes.data : []);
+            setEmployees(empRes.data?.employees || (Array.isArray(empRes.data) ? empRes.data : []));
         } catch (err) { console.error('Payroll load failed:', err); }
         finally { setLoading(false); }
     };

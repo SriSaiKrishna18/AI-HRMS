@@ -245,7 +245,7 @@ Rise_os/
 │   │   ├── analyticsController.js       # Analytics: 5 chart datasets
 │   │   └── payrollController.js         # Payroll CRUD + tx hash storage
 │   ├── routes/                          # Express route files (auth, employees, tasks, dashboard, ai, analytics, payroll)
-│   ├── seed.js                          # Demo data (15 employees, 30 tasks) — auto-runs on empty DB
+│   ├── seed.js                          # Demo data (40 employees, 80+ tasks, 45 payroll) — auto-runs on empty DB
 │   ├── server.js                        # Entry point + middleware chain + auto-seed
 │   └── .env.example                     # Environment template
 ├── client/                              # Frontend SPA
@@ -264,8 +264,11 @@ Rise_os/
 │   │       ├── LoginPage.jsx            # Auth UI
 │   │       ├── DashboardPage.jsx        # Stats + workload widget + activity feed
 │   │       ├── EmployeesPage.jsx        # Employee table + profiles + payroll UI
-│   │       ├── TasksPage.jsx            # Task board + Web3 logging
+│   │       ├── EmployeeDetailPage.jsx   # Rich profile + AI scores + task/payroll history
+│   │       ├── TasksPage.jsx            # Task board + Web3 logging + AI suggest
 │   │       ├── AnalyticsPage.jsx        # 5 Recharts visualizations
+│   │       ├── AIInsightsPage.jsx       # AI Intelligence hub (4 tabs)
+│   │       ├── PayrollPage.jsx          # Payroll records + on-chain proof
 │   │       └── NotFoundPage.jsx         # 404
 │   ├── index.html                       # SEO-optimized entry
 │   └── vite.config.js                   # Vite config + API proxy

@@ -29,12 +29,15 @@ export default function EmployeeDetailPage() {
                 api.get(`/ai/skill-gap/${id}`),
                 api.get(`/ai/trend/${id}`)
             ]);
-            if (empRes.status === 'fulfilled') setEmployee(empRes.value.data);
+            if (empRes.status === 'fulfilled') setEmployee(empRes.value.data?.employee || empRes.value.data);
             if (taskRes.status === 'fulfilled') {
                 const all = Array.isArray(taskRes.value.data) ? taskRes.value.data : (taskRes.value.data?.tasks || []);
                 setTasks(all.filter(t => t.employee_id === parseInt(id)));
             }
-            if (payRes.status === 'fulfilled') setPayroll(Array.isArray(payRes.value.data) ? payRes.value.data : []);
+            if (payRes.status === 'fulfilled') {
+                const payData = payRes.value.data;
+                setPayroll(Array.isArray(payData) ? payData : (payData?.records || []));
+            }
             if (prodRes.status === 'fulfilled') setProductivity(prodRes.value.data);
             if (gapRes.status === 'fulfilled') setSkillGap(gapRes.value.data);
             if (trendRes.status === 'fulfilled') setTrend(trendRes.value.data);

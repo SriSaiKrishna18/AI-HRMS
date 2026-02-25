@@ -13,6 +13,18 @@ export default function TasksPage() {
     const [toast, setToast] = useState(null);
     const [aiSuggestions, setAiSuggestions] = useState(null);
     const [aiLoading, setAiLoading] = useState(false);
+    const [walletAddr, setWalletAddr] = useState(web3Service.getAddress());
+
+    const connectWallet = async () => {
+        try {
+            const result = await web3Service.connectWallet();
+            setWalletAddr(result.address);
+            showToast(`Wallet connected: ${result.address.slice(0, 6)}...${result.address.slice(-4)}`);
+        } catch (err) { showToast(err.message, 'error'); }
+    };
+
+    const isOverdue = (task) => task.deadline && new Date(task.deadline) < new Date() && task.status !== 'completed';
+
 
     useEffect(() => { fetchData(); }, []);
 
@@ -106,9 +118,20 @@ export default function TasksPage() {
                     <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>Tasks</h1>
                     <p style={{ color: '#52525b', fontSize: 13, marginTop: 4 }}>{tasks.length} total tasks</p>
                 </div>
-                <button className="btn-primary" onClick={() => setShowModal(true)}>
-                    <HiOutlinePlus size={16} /> Assign Task
-                </button>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {walletAddr ? (
+                        <span className="badge badge-skill" style={{ fontSize: 11 }}>
+                            🦊 {walletAddr.slice(0, 6)}…{walletAddr.slice(-4)}
+                        </span>
+                    ) : (
+                        <button className="btn-ghost" onClick={connectWallet}>
+                            🦊 Connect Wallet
+                        </button>
+                    )}
+                    <button className="btn-primary" onClick={() => setShowModal(true)}>
+                        <HiOutlinePlus size={16} /> Assign Task
+                    </button>
+                </div>
             </div>
 
             {/* Filters */}
@@ -145,13 +168,18 @@ export default function TasksPage() {
             {/* Task Cards */}
             <div className="task-grid-responsive" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
                 {filteredTasks.map(task => (
-                    <div key={task.id} className="card card-hover" style={{ padding: 20 }}>
+                    <div key={task.id} className="card card-hover" style={{ padding: 20, borderLeft: isOverdue(task) ? '3px solid #ef4444' : undefined }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                            <span className={`badge status-${task.status}`} style={{ fontSize: 11 }}>
-                                {task.status.replace('_', ' ')}
-                            </span>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                <span className={`badge status-${task.status}`} style={{ fontSize: 11 }}>
+                                    {task.status.replace('_', ' ')}
+                                </span>
+                                {isOverdue(task) && (
+                                    <span style={{ fontSize: 10, color: '#ef4444', fontWeight: 600 }}>⚠ OVERDUE</span>
+                                )}
+                            </div>
                             {task.deadline && (
-                                <span style={{ fontSize: 11, color: '#52525b' }}>
+                                <span style={{ fontSize: 11, color: isOverdue(task) ? '#ef4444' : '#52525b' }}>
                                     Due {new Date(task.deadline).toLocaleDateString()}
                                 </span>
                             )}

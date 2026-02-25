@@ -255,3 +255,59 @@ exports.suggestAssignment = (req, res) => {
     }
 };
 
+// Performance Trend — 4-week rolling completion analysis
+exports.getPerformanceTrend = (req, res) => {
+    try {
+        const org_id = req.org.id;
+        const { employeeId } = req.params;
+
+        const employee = db.prepare('SELECT id, name FROM employees WHERE id = ? AND org_id = ?').get(employeeId, org_id);
+        if (!employee) return res.status(404).json({ error: 'Employee not found.' });
+
+        // Get tasks completed in the last 4 weeks, grouped by week
+        const weeks = [];
+        for (let i = 3; i >= 0; i--) {
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - (i + 1) * 7);
+            const weekEnd = new Date();
+            weekEnd.setDate(weekEnd.getDate() - i * 7);
+
+            const count = db.prepare(`
+                SELECT COUNT(*) as count FROM tasks
+                WHERE employee_id = ? AND org_id = ? AND status = 'completed'
+                AND completed_at >= ? AND completed_at < ?
+            `).get(employeeId, org_id, weekStart.toISOString(), weekEnd.toISOString());
+
+            weeks.push({
+                week: `Week ${4 - i}`,
+                startDate: weekStart.toISOString().split('T')[0],
+                completed: count.count
+            });
+        }
+
+        // Calculate trend direction
+        const recentAvg = (weeks[2].completed + weeks[3].completed) / 2;
+        const olderAvg = (weeks[0].completed + weeks[1].completed) / 2;
+        const delta = recentAvg - olderAvg;
+
+        let trend = 'stable';
+        if (delta > 0.5) trend = 'improving';
+        else if (delta < -0.5) trend = 'declining';
+
+        res.json({
+            employeeId: parseInt(employeeId),
+            name: employee.name,
+            weeks,
+            trend,
+            delta: Math.round(delta * 10) / 10,
+            summary: trend === 'improving'
+                ? `${employee.name} is completing more tasks recently — great momentum!`
+                : trend === 'declining'
+                    ? `${employee.name}'s output has decreased — consider checking workload.`
+                    : `${employee.name} has steady consistent performance.`
+        });
+    } catch (err) {
+        console.error('Performance trend error:', err);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+};

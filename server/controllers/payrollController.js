@@ -1,5 +1,23 @@
 const db = require('../config/db');
 
+// GET /api/payroll — get all payroll records for org
+exports.getAll = (req, res) => {
+    try {
+        const org_id = req.org.id;
+        const records = db.prepare(`
+            SELECT p.*, e.name as employee_name, e.wallet_address
+            FROM payroll_records p
+            JOIN employees e ON p.employee_id = e.id
+            WHERE p.org_id = ?
+            ORDER BY p.created_at DESC
+        `).all(org_id);
+        res.json(records);
+    } catch (err) {
+        console.error('Get all payroll error:', err);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+};
+
 // POST /api/payroll — create payroll record
 exports.create = (req, res) => {
     try {

@@ -189,11 +189,17 @@
 }
 
 /* Glass card variant */
-.card-glass {
+.card-glass,
+.glass-card {
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
 /* ── Stat Cards ───────────────────────────── */

@@ -79,6 +79,21 @@ exports.getStats = (req, res) => {
       GROUP BY department
     `).all(org_id);
 
+    // ── Task Trend (last 14 days — completed + assigned per day) ──
+    const taskTrend = db.prepare(`
+      SELECT DATE(created_at) as date,
+        COUNT(CASE WHEN status = 'assigned' THEN 1 END) as assigned,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed
+      FROM tasks WHERE org_id = ? AND created_at >= datetime('now', '-14 days')
+      GROUP BY DATE(created_at) ORDER BY date ASC
+    `).all(org_id);
+
+    // ── Department Distribution (for pie chart) ─────────────
+    const departmentDistribution = departments.map(d => ({
+      name: d.department,
+      count: d.count
+    }));
+
     res.json({
       stats: {
         totalEmployees,
@@ -94,7 +109,9 @@ exports.getStats = (req, res) => {
       skillDistribution,
       recentTasks,
       topPerformers,
-      departments
+      departments,
+      taskTrend,
+      departmentDistribution
     });
   } catch (err) {
     console.error('Dashboard stats error:', err);

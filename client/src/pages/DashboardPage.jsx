@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { HiOutlineUserGroup, HiOutlineClipboardCheck, HiOutlineClipboardList, HiOutlineTrendingUp, HiOutlineLightningBolt, HiOutlineClock, HiOutlineExclamation, HiOutlinePlus, HiOutlineChartBar } from 'react-icons/hi';
+import {
+    LineChart, Line, PieChart, Pie, Cell,
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
 
 export default function DashboardPage() {
     const { user } = useAuth();
@@ -114,6 +118,56 @@ export default function DashboardPage() {
                         <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, fontWeight: 500 }}>{card.label}</p>
                     </div>
                 ))}
+            </div>
+
+            {/* Charts Row: Task Trend + Department Distribution */}
+            <div className="stat-grid-responsive" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                {/* Task Completion Trend */}
+                <div className="card glass-card" style={{ padding: 22 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                        <div style={{ width: 3, height: 20, borderRadius: 2, background: 'linear-gradient(to bottom, var(--accent), #6366f1)' }} />
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>Task Completion Trend</h3>
+                    </div>
+                    {data?.taskTrend?.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={220}>
+                            <LineChart data={data.taskTrend}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" />
+                                <XAxis dataKey="date" stroke="var(--text-dim)" fontSize={10} tickFormatter={d => d.slice(5)} />
+                                <YAxis stroke="var(--text-dim)" fontSize={10} allowDecimals={false} />
+                                <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 8, fontSize: 12 }} />
+                                <Legend wrapperStyle={{ fontSize: 11 }} />
+                                <Line type="monotone" dataKey="completed" stroke="#22c55e" strokeWidth={2.5} name="Completed" dot={{ fill: '#22c55e', r: 3 }} activeDot={{ r: 6 }} />
+                                <Line type="monotone" dataKey="assigned" stroke="#f59e0b" strokeWidth={2.5} name="Assigned" dot={{ fill: '#f59e0b', r: 3 }} activeDot={{ r: 6 }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-faint)', fontSize: 13 }}>No trend data yet</div>
+                    )}
+                </div>
+
+                {/* Department Distribution */}
+                <div className="card glass-card" style={{ padding: 22 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                        <div style={{ width: 3, height: 20, borderRadius: 2, background: 'linear-gradient(to bottom, #8b5cf6, #ec4899)' }} />
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>Department Distribution</h3>
+                    </div>
+                    {data?.departmentDistribution?.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={220}>
+                            <PieChart>
+                                <Pie data={data.departmentDistribution} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="count"
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                >
+                                    {(data.departmentDistribution || []).map((entry, i) => (
+                                        <Cell key={i} fill={['#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6', '#f97316'][i % 8]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 8, fontSize: 12 }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-faint)', fontSize: 13 }}>No department data</div>
+                    )}
+                </div>
             </div>
 
             {/* Middle Row: Completion Ring + Quick Actions */}

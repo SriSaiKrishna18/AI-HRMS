@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage';
 import EmployeesPage from './pages/EmployeesPage';
 import TasksPage from './pages/TasksPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import PayrollPage from './pages/PayrollPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function ProtectedRoute({ children }) {
@@ -36,6 +37,7 @@ function App() {
                 <Route path="/employees" element={<EmployeesPage />} />
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/payroll" element={<PayrollPage />} />
               </Route>
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

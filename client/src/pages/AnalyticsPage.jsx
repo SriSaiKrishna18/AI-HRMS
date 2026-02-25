@@ -3,6 +3,7 @@ import api from '../services/api';
 import { HiOutlineChartBar } from 'react-icons/hi';
 import {
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+    RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 
@@ -80,8 +81,11 @@ export default function AnalyticsPage() {
             {/* Row 1: Line Chart + Bar Chart */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                 {/* Task Completion Trend */}
-                <div className="card" style={{ padding: 22 }}>
-                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Task Completion Trend</h3>
+                <div className="card glass-card" style={{ padding: 22 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+                        <div style={{ width: 3, height: 20, borderRadius: 2, background: 'linear-gradient(to bottom, var(--accent), #6366f1)' }} />
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>Task Completion Trend</h3>
+                    </div>
                     <ResponsiveContainer width="100%" height={240}>
                         <LineChart data={trendData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
@@ -95,8 +99,11 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Department Productivity */}
-                <div className="card" style={{ padding: 22 }}>
-                    <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 18 }}>Department Productivity</h3>
+                <div className="card glass-card" style={{ padding: 22 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+                        <div style={{ width: 3, height: 20, borderRadius: 2, background: 'linear-gradient(to bottom, #22c55e, #14b8a6)' }} />
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>Department Productivity</h3>
+                    </div>
                     <ResponsiveContainer width="100%" height={240}>
                         <BarChart data={deptData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
@@ -182,6 +189,40 @@ export default function AnalyticsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Row 3: Team Performance Radar */}
+            {deptData.length > 0 && (
+                <div className="card glass-card" style={{ padding: 22, marginTop: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+                        <div style={{ width: 3, height: 20, borderRadius: 2, background: 'linear-gradient(to bottom, #6366f1, #ec4899)' }} />
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>Team Performance Overview</h3>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'center' }}>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <RadarChart data={deptData.map(d => ({ ...d, fullMark: 100 }))}>
+                                <PolarGrid stroke="var(--border-default)" />
+                                <PolarAngleAxis dataKey="department" stroke="var(--text-dim)" tick={{ fontSize: 11 }} />
+                                <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="var(--text-dim)" tick={{ fontSize: 10 }} />
+                                <Radar name="Completion Rate" dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} strokeWidth={2} />
+                            </RadarChart>
+                        </ResponsiveContainer>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <h4 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Department Metrics</h4>
+                            {deptData.map((dept, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-elevated)', borderRadius: 8 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{dept.department}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <div style={{ width: 60, height: 4, background: 'var(--border-subtle)', borderRadius: 2 }}>
+                                            <div style={{ height: '100%', borderRadius: 2, width: `${dept.score}%`, background: dept.score >= 70 ? '#22c55e' : dept.score >= 40 ? '#f59e0b' : '#ef4444' }} />
+                                        </div>
+                                        <span style={{ fontSize: 12, fontWeight: 600, color: scoreColor(dept.score), minWidth: 32 }}>{dept.score}%</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

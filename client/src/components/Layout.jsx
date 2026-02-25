@@ -41,13 +41,7 @@ export default function Layout() {
             }}>
                 {/* Logo */}
                 <div style={{ padding: '4px 14px', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                        width: 28, height: 28,
-                        background: '#6366f1',
-                        borderRadius: 7,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 13, fontWeight: 800, color: '#fff'
-                    }}>R</div>
+                    <img src="/RizeOS.png" alt="RizeOS" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
                     <span style={{ fontSize: 16, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>RizeOS</span>
                 </div>
 

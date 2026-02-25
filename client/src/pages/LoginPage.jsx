@@ -65,13 +65,7 @@ export default function LoginPage() {
                         display: 'inline-flex', alignItems: 'center', gap: 8,
                         marginBottom: 48
                     }}>
-                        <div style={{
-                            width: 32, height: 32,
-                            background: '#6366f1',
-                            borderRadius: 8,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 16, fontWeight: 800, color: '#fff'
-                        }}>R</div>
+                        <img src="/RizeOS.png" alt="RizeOS" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
                         <span style={{ fontSize: 18, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>RizeOS</span>
                     </div>
 
@@ -116,6 +110,15 @@ export default function LoginPage() {
                 className="login-right-panel"
             >
                 <div style={{ maxWidth: 360, width: '100%', margin: '0 auto' }}>
+                    {/* Mobile-only logo (hidden on desktop by CSS) */}
+                    <div className="login-mobile-logo" style={{
+                        display: 'none', alignItems: 'center', gap: 8,
+                        marginBottom: 32, justifyContent: 'center'
+                    }}>
+                        <img src="/RizeOS.png" alt="RizeOS" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
+                        <span style={{ fontSize: 20, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>RizeOS</span>
+                    </div>
+
                     <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fafafa', marginBottom: 6, letterSpacing: '-0.02em' }}>
                         {isRegister ? 'Create your workspace' : 'Welcome back'}
                     </h2>
@@ -205,11 +208,16 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {/* Responsive: hide left panel on mobile */}
+            {/* Responsive: hide left panel on mobile, show mobile logo */}
             <style>{`
                 @media (max-width: 768px) {
                     .login-left-panel { display: none !important; }
-                    .login-right-panel { width: 100% !important; min-width: unset !important; }
+                    .login-right-panel {
+                        width: 100% !important;
+                        min-width: unset !important;
+                        padding: 32px 20px !important;
+                    }
+                    .login-mobile-logo { display: flex !important; }
                 }
             `}</style>
         </div>

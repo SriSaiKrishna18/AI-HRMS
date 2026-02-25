@@ -316,13 +316,17 @@ Yes, theme preference is stored in `localStorage` and restored on load.
 
 ## 📸 Screenshots
 
-| Dashboard | Analytics |
+| Login | Dashboard |
 |---|---|
-| ![Dashboard](./screenshots/dashboard.png) | ![Analytics](./screenshots/analytics.png) |
+| ![Login](./screenshots/Login.png) | ![Dashboard](./screenshots/Dashboard.png) |
 
 | Employees | Tasks |
 |---|---|
-| ![Employees](./screenshots/employees.png) | ![Tasks](./screenshots/tasks.png) |
+| ![Employees](./screenshots/Employees.png) | ![Tasks](./screenshots/Tasks.png) |
+
+| Analytics | On-Chain Transaction |
+|---|---|
+| ![Analytics](./screenshots/Analytics.png) | ![Transaction](./screenshots/Transaction.png) |
 
 > Demo credentials: `admin@rizetech.com` / `demo123`
 

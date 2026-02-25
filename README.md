@@ -344,5 +344,7 @@ MIT License — Free for educational and commercial use.
 |---|---|
 | **Frontend** | [ai-hrms-iota.vercel.app](https://ai-hrms-iota.vercel.app) |
 | **Backend** | [ai-hrms-50sy.onrender.com](https://ai-hrms-50sy.onrender.com/api/health) |
+| **Smart Contract** | [TaskLogger on Sepolia](https://sepolia.etherscan.io/address/0x2e2605F492B36b29F8388a610e180d46A8f5d77e) |
 | **GitHub** | [SriSaiKrishna18/AI-HRMS](https://github.com/SriSaiKrishna18/AI-HRMS) |
 | **Demo Credentials** | `admin@rizetech.com` / `demo123` |
+

@@ -4,8 +4,9 @@ import { ethers } from 'ethers';
 // Sepolia testnet chain ID
 const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111 in hex
 
-// TaskLogger deployed on Sepolia — will be updated with actual address
-const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // Placeholder until deployment
+// TaskLogger deployed on Sepolia testnet
+// Verified on Etherscan: https://sepolia.etherscan.io/address/0x2e2605F492B36b29F8388a610e180d46A8f5d77e
+const CONTRACT_ADDRESS = '0x2e2605F492B36b29F8388a610e180d46A8f5d77e';
 
 // ABI for TaskLogger contract (matches TaskLogger.sol)
 const CONTRACT_ABI = [

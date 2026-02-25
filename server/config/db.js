@@ -77,6 +77,18 @@ function initializeDatabase() {
     );
   `);
 
+  // Performance indexes for dashboard/analytics queries
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_employees_org ON employees(org_id);
+    CREATE INDEX IF NOT EXISTS idx_employees_dept ON employees(org_id, department);
+    CREATE INDEX IF NOT EXISTS idx_tasks_org ON tasks(org_id);
+    CREATE INDEX IF NOT EXISTS idx_tasks_employee ON tasks(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(org_id, status);
+    CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks(org_id, completed_at);
+    CREATE INDEX IF NOT EXISTS idx_payroll_employee ON payroll_records(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_payroll_org ON payroll_records(org_id);
+  `);
+
   // Seed role_requirements if empty
   const count = db.prepare('SELECT COUNT(*) as count FROM role_requirements').get();
   if (count.count === 0) {

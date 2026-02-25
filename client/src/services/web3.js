@@ -1,18 +1,40 @@
 import { ethers } from 'ethers';
 
+// ── Contract Configuration ──────────────────────────────────
 // Sepolia testnet chain ID
 const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111 in hex
+
+// TaskLogger deployed on Sepolia — will be updated with actual address
+const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // Placeholder until deployment
+
+// ABI for TaskLogger contract (matches TaskLogger.sol)
+const CONTRACT_ABI = [
+    'function logTaskCompletion(address employee, uint256 taskId) external',
+    'function isTaskLogged(uint256 taskId) external view returns (bool)',
+    'function totalTasksLogged() external view returns (uint256)',
+    'function taskLogged(uint256) external view returns (bool)',
+    'event TaskCompleted(address indexed employee, uint256 indexed taskId, uint256 timestamp, address indexed organization)'
+];
+
+// Fallback: burn address for when contract is not yet deployed
+const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 
 class Web3Service {
     constructor() {
         this.provider = null;
         this.signer = null;
         this.address = null;
+        this.contract = null;
     }
 
     // Check if MetaMask is available
     isMetaMaskInstalled() {
         return typeof window !== 'undefined' && typeof window.ethereum !== 'undefined';
+    }
+
+    // Check if contract is deployed (non-zero address)
+    isContractDeployed() {
+        return CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000';
     }
 
     // Connect MetaMask wallet
@@ -30,9 +52,15 @@ class Web3Service {
             // Switch to Sepolia if needed
             await this.switchToSepolia();
 
+            // Initialize contract if deployed
+            if (this.isContractDeployed()) {
+                this.contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, this.signer);
+            }
+
             return {
                 address: this.address,
-                network: 'Sepolia Testnet'
+                network: 'Sepolia Testnet',
+                contractDeployed: this.isContractDeployed()
             };
         } catch (err) {
             if (err.code === 4001) {
@@ -48,10 +76,8 @@ class Web3Service {
             throw new Error('MetaMask is not installed.');
         }
 
-        // Always re-create provider and signer to handle page navigation
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (!accounts || accounts.length === 0) {
-            // Need user approval
             const reqAccounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
             this.address = reqAccounts[0];
         } else {
@@ -61,6 +87,11 @@ class Web3Service {
         this.provider = new ethers.BrowserProvider(window.ethereum);
         this.signer = await this.provider.getSigner();
         await this.switchToSepolia();
+
+        // Re-initialize contract with fresh signer
+        if (this.isContractDeployed()) {
+            this.contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, this.signer);
+        }
 
         return this.signer;
     }
@@ -89,8 +120,8 @@ class Web3Service {
     }
 
     // Log task completion on-chain
-    async logTaskOnChain(employeeId, taskId) {
-        // Auto-reconnect: ensure signer is fresh
+    // Uses smart contract if deployed, falls back to data-encoded transaction
+    async logTaskOnChain(employeeAddress, taskId) {
         await this.ensureConnected();
 
         if (!this.signer) {
@@ -98,33 +129,97 @@ class Web3Service {
         }
 
         try {
-            // Encode task data as hex in the transaction data field
+            let tx, receipt;
+
+            if (this.isContractDeployed() && this.contract) {
+                // ── Method 1: Smart Contract Call ──────────────────────
+                // Call logTaskCompletion on the deployed TaskLogger contract
+                const empAddr = employeeAddress && ethers.isAddress(employeeAddress)
+                    ? employeeAddress
+                    : this.address; // Fallback to connected wallet
+
+                tx = await this.contract.logTaskCompletion(empAddr, taskId);
+                receipt = await tx.wait();
+
+                return {
+                    txHash: receipt.hash,
+                    blockNumber: receipt.blockNumber,
+                    explorerUrl: `https://sepolia.etherscan.io/tx/${receipt.hash}`,
+                    method: 'smart_contract',
+                    contractAddress: CONTRACT_ADDRESS
+                };
+            } else {
+                // ── Method 2: Fallback – Data-encoded transaction ─────
+                const data = ethers.hexlify(
+                    ethers.toUtf8Bytes(
+                        JSON.stringify({
+                            type: 'RizeOS_TaskCompletion',
+                            employeeId: employeeAddress,
+                            taskId,
+                            timestamp: Date.now()
+                        })
+                    )
+                );
+
+                tx = await this.signer.sendTransaction({
+                    to: BURN_ADDRESS,
+                    value: ethers.parseEther('0'),
+                    data: data
+                });
+
+                receipt = await tx.wait();
+
+                return {
+                    txHash: receipt.hash,
+                    blockNumber: receipt.blockNumber,
+                    explorerUrl: `https://sepolia.etherscan.io/tx/${receipt.hash}`,
+                    method: 'data_encoded',
+                    contractAddress: null
+                };
+            }
+        } catch (err) {
+            if (err.code === 'ACTION_REJECTED') {
+                throw new Error('Transaction rejected by user.');
+            }
+            throw err;
+        }
+    }
+
+    // Log payroll proof on-chain
+    async logPayrollOnChain(employeeAddress, amount, period) {
+        await this.ensureConnected();
+
+        if (!this.signer) {
+            throw new Error('Wallet not connected.');
+        }
+
+        try {
             const data = ethers.hexlify(
                 ethers.toUtf8Bytes(
                     JSON.stringify({
-                        type: 'RizeOS_TaskCompletion',
-                        employeeId,
-                        taskId,
-                        timestamp: Date.now()
+                        type: 'RizeOS_PayrollProof',
+                        employee: employeeAddress,
+                        amount,
+                        period,
+                        timestamp: Date.now(),
+                        verified: true
                     })
                 )
             );
 
-            // Send to burn address with task data (MetaMask blocks data to self)
-            const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
             const tx = await this.signer.sendTransaction({
                 to: BURN_ADDRESS,
                 value: ethers.parseEther('0'),
                 data: data
             });
 
-            // Wait for confirmation
             const receipt = await tx.wait();
 
             return {
                 txHash: receipt.hash,
                 blockNumber: receipt.blockNumber,
-                explorerUrl: `https://sepolia.etherscan.io/tx/${receipt.hash}`
+                explorerUrl: `https://sepolia.etherscan.io/tx/${receipt.hash}`,
+                type: 'payroll_proof'
             };
         } catch (err) {
             if (err.code === 'ACTION_REJECTED') {
@@ -134,16 +229,70 @@ class Web3Service {
         }
     }
 
+    // Check if task is already logged on-chain (requires contract)
+    async isTaskLoggedOnChain(taskId) {
+        if (!this.isContractDeployed()) return false;
+
+        try {
+            await this.ensureConnected();
+            return await this.contract.isTaskLogged(taskId);
+        } catch {
+            return false;
+        }
+    }
+
+    // Get total tasks logged on-chain (requires contract)
+    async getTotalTasksLogged() {
+        if (!this.isContractDeployed()) return 0;
+
+        try {
+            await this.ensureConnected();
+            const total = await this.contract.totalTasksLogged();
+            return Number(total);
+        } catch {
+            return 0;
+        }
+    }
+
+    // Get wallet balance
+    async getBalance() {
+        try {
+            await this.ensureConnected();
+            const balance = await this.provider.getBalance(this.address);
+            return ethers.formatEther(balance);
+        } catch {
+            return '0';
+        }
+    }
+
+    // Get network name
+    async getNetwork() {
+        try {
+            if (!this.provider) return null;
+            const network = await this.provider.getNetwork();
+            return network.name;
+        } catch {
+            return null;
+        }
+    }
+
     // Disconnect
     disconnect() {
         this.provider = null;
         this.signer = null;
         this.address = null;
+        this.contract = null;
     }
 
     // Get current address
     getAddress() {
         return this.address;
+    }
+
+    // Get shortened address for display
+    getShortAddress() {
+        if (!this.address) return null;
+        return `${this.address.slice(0, 6)}...${this.address.slice(-4)}`;
     }
 
     // Listen for account changes

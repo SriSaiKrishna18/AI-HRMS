@@ -1,223 +1,326 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { HiOutlineLightningBolt, HiOutlineShieldCheck, HiOutlineCube, HiOutlineChartBar } from 'react-icons/hi';
 
 export default function LoginPage() {
+    const { login } = useAuth();
     const [isRegister, setIsRegister] = useState(false);
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login, register } = useAuth();
-    const navigate = useNavigate();
-    const [coldStart, setColdStart] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
-        setColdStart(false);
-        const timer = setTimeout(() => setColdStart(true), 5000);
+
+        if (isRegister && form.password !== form.confirmPassword) {
+            setError('Passwords do not match.');
+            setLoading(false);
+            return;
+        }
+
+        if (form.password.length < 6) {
+            setError('Password must be at least 6 characters.');
+            setLoading(false);
+            return;
+        }
+
         try {
-            if (isRegister) {
-                await register(name, email, password);
-            } else {
-                await login(email, password);
-            }
-            clearTimeout(timer);
-            navigate('/');
+            const endpoint = isRegister ? '/auth/register' : '/auth/login';
+            const body = isRegister
+                ? { name: form.name, email: form.email, password: form.password }
+                : { email: form.email, password: form.password };
+
+            const { default: api } = await import('../services/api');
+            const res = await api.post(endpoint, body);
+            login(res.data.token, res.data.org);
         } catch (err) {
-            clearTimeout(timer);
-            setColdStart(false);
-            setError(err.response?.data?.error || 'Something went wrong.');
+            setError(err.response?.data?.error || 'Something went wrong. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
+    const features = [
+        { icon: HiOutlineChartBar, title: 'AI-Powered Analytics', desc: 'Productivity scores, skill gap detection, smart task assignment' },
+        { icon: HiOutlineCube, title: 'Web3 Verification', desc: 'On-chain task logging & payroll proof via smart contracts' },
+        { icon: HiOutlineLightningBolt, title: 'Real-time Dashboard', desc: 'Live metrics, workload indicators, performance trends' },
+        { icon: HiOutlineShieldCheck, title: 'Enterprise Security', desc: 'JWT auth, rate limiting, input validation, encrypted storage' },
+    ];
+
     return (
-        <div style={{ minHeight: '100vh', display: 'flex' }}>
-            {/* Left panel — branding */}
+        <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            background: 'var(--bg-body)',
+            position: 'relative',
+            overflow: 'hidden',
+        }}>
+            {/* Background gradient orbs */}
+            <div style={{
+                position: 'absolute', top: '-20%', left: '-10%',
+                width: '500px', height: '500px', borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)',
+                pointerEvents: 'none',
+            }} />
+            <div style={{
+                position: 'absolute', bottom: '-20%', right: '-10%',
+                width: '600px', height: '600px', borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)',
+                pointerEvents: 'none',
+            }} />
+
+            {/* Left Panel — Branding */}
             <div style={{
                 flex: 1,
-                background: 'var(--bg-body)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
-                padding: '60px 48px',
-                borderRight: '1px solid var(--border-default)',
+                padding: '60px',
                 position: 'relative',
-                overflow: 'hidden'
-            }}
-                className="login-left-panel"
-            >
-                {/* Subtle grid pattern */}
-                <div style={{
-                    position: 'absolute', inset: 0, opacity: 0.03,
-                    backgroundImage: 'radial-gradient(var(--text-primary) 1px, transparent 1px)',
-                    backgroundSize: '24px 24px',
-                    pointerEvents: 'none'
-                }} />
-
-                <div style={{ position: 'relative', zIndex: 1, maxWidth: 400 }}>
+                zIndex: 1,
+            }} className="page-header-responsive" id="login-branding">
+                <div style={{ maxWidth: '480px' }}>
                     <div style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 8,
-                        marginBottom: 48
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        marginBottom: '32px',
                     }}>
-                        <img src="/RizeOS.png" alt="RizeOS" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
-                        <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>RizeOS</span>
+                        <img src="/RizeOS.png" alt="RizeOS" style={{ width: '40px', height: '40px', borderRadius: '10px' }} />
+                        <span style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+                            RizeOS
+                        </span>
                     </div>
 
                     <h1 style={{
-                        fontSize: 40, fontWeight: 700, color: 'var(--text-primary)',
-                        lineHeight: 1.15, letterSpacing: '-0.03em', marginBottom: 20
+                        fontSize: '42px', fontWeight: '800', lineHeight: '1.1',
+                        letterSpacing: '-0.04em', marginBottom: '16px',
+                        color: 'var(--text-primary)',
                     }}>
-                        Workforce intelligence,<br />
-                        <span style={{ color: '#6366f1' }}>reimagined.</span>
+                        Workforce intelligence, <span className="gradient-text">reimagined.</span>
                     </h1>
 
-                    <p style={{ fontSize: 16, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 40 }}>
-                        AI-powered productivity scoring, skill gap detection,
-                        and on-chain task verification — all in one platform.
+                    <p style={{
+                        fontSize: '16px', lineHeight: '1.7', color: 'var(--text-muted)',
+                        marginBottom: '40px',
+                    }}>
+                        AI-powered HR management with blockchain-verified workforce analytics.
+                        Built for modern teams that demand transparency and performance.
                     </p>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        {[
-                            { icon: '📊', text: 'AI productivity scoring with trend analysis' },
-                            { icon: '🧩', text: 'Smart skill gap detection & course suggestions' },
-                            { icon: '⛓️', text: 'On-chain task logging via Ethereum Sepolia' }
-                        ].map((feat, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <span style={{ fontSize: 18 }}>{feat.icon}</span>
-                                <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{feat.text}</span>
+                    <div style={{ display: 'grid', gap: '16px' }} className="stagger-children">
+                        {features.map((f, i) => (
+                            <div key={i} style={{
+                                display: 'flex', alignItems: 'flex-start', gap: '14px',
+                                padding: '14px 16px', borderRadius: '12px',
+                                background: 'var(--accent-bg)', border: '1px solid var(--border-subtle)',
+                            }}>
+                                <div style={{
+                                    width: '36px', height: '36px', borderRadius: '10px',
+                                    background: 'var(--accent-gradient)', display: 'flex',
+                                    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                }}>
+                                    <f.icon size={18} color="white" />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px' }}>
+                                        {f.title}
+                                    </div>
+                                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                                        {f.desc}
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Right panel — form */}
+            {/* Right Panel — Form */}
             <div style={{
-                width: 480,
-                minWidth: 380,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                padding: '48px 40px',
-                background: 'var(--bg-card)'
-            }}
-                className="login-right-panel"
-            >
-                <div style={{ maxWidth: 360, width: '100%', margin: '0 auto' }}>
-                    {/* Mobile-only logo (hidden on desktop by CSS) */}
-                    <div className="login-mobile-logo" style={{
-                        display: 'none', alignItems: 'center', gap: 8,
-                        marginBottom: 32, justifyContent: 'center'
+                width: '480px', minHeight: '100vh',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '40px',
+                background: 'var(--bg-card)',
+                borderLeft: '1px solid var(--border-default)',
+                position: 'relative', zIndex: 1,
+            }}>
+                <div style={{ width: '100%', maxWidth: '360px' }} className="animate-in">
+                    {/* Toggle */}
+                    <div style={{
+                        display: 'flex', marginBottom: '32px',
+                        background: 'var(--bg-body)', borderRadius: '12px',
+                        padding: '4px', border: '1px solid var(--border-default)',
                     }}>
-                        <img src="/RizeOS.png" alt="RizeOS" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
-                        <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>RizeOS</span>
+                        <button
+                            type="button"
+                            onClick={() => { setIsRegister(false); setError(''); }}
+                            style={{
+                                flex: 1, padding: '10px', borderRadius: '9px', border: 'none',
+                                fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                background: !isRegister ? 'var(--accent-gradient)' : 'transparent',
+                                color: !isRegister ? 'white' : 'var(--text-muted)',
+                                boxShadow: !isRegister ? '0 2px 8px rgba(99,102,241,0.25)' : 'none',
+                            }}
+                        >
+                            Sign In
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => { setIsRegister(true); setError(''); }}
+                            style={{
+                                flex: 1, padding: '10px', borderRadius: '9px', border: 'none',
+                                fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                background: isRegister ? 'var(--accent-gradient)' : 'transparent',
+                                color: isRegister ? 'white' : 'var(--text-muted)',
+                                boxShadow: isRegister ? '0 2px 8px rgba(99,102,241,0.25)' : 'none',
+                            }}
+                        >
+                            Register
+                        </button>
                     </div>
 
-                    <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, letterSpacing: '-0.02em' }}>
-                        {isRegister ? 'Create your workspace' : 'Welcome back'}
+                    <h2 style={{
+                        fontSize: '24px', fontWeight: '800', marginBottom: '8px',
+                        letterSpacing: '-0.03em',
+                    }}>
+                        {isRegister ? 'Create your organization' : 'Welcome back'}
                     </h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 32 }}>
-                        {isRegister ? 'Set up your organization to get started' : 'Sign in to continue to RizeOS'}
+                    <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '28px' }}>
+                        {isRegister
+                            ? 'Set up your AI-HRMS workspace in seconds'
+                            : 'Sign in to your workforce intelligence platform'}
                     </p>
 
                     {error && (
                         <div style={{
-                            background: 'var(--danger-bg)',
-                            border: '1px solid var(--danger)',
-                            color: 'var(--danger-text)',
-                            padding: '10px 14px',
-                            borderRadius: 8,
-                            fontSize: 13,
-                            marginBottom: 20
+                            padding: '12px 16px', borderRadius: '10px', marginBottom: '20px',
+                            background: 'var(--danger-bg)', color: 'var(--danger-text)',
+                            fontSize: '13px', fontWeight: '500',
+                            border: '1px solid rgba(239,68,68,0.2)',
+                            animation: 'slideUp 0.2s ease',
                         }}>
                             {error}
                         </div>
                     )}
 
-                    {coldStart && (
-                        <div style={{
-                            background: 'rgba(251,191,36,0.08)',
-                            border: '1px solid rgba(251,191,36,0.2)',
-                            color: '#fbbf24',
-                            padding: '10px 14px',
-                            borderRadius: 8,
-                            fontSize: 12,
-                            marginBottom: 20,
-                            lineHeight: 1.5
-                        }}>
-                            ⏳ Server is waking up (free tier cold start — takes ~30s on first load). Please wait...
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         {isRegister && (
-                            <div style={{ marginBottom: 16 }}>
-                                <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>
-                                    Organization name
+                            <div>
+                                <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                                    Organization Name
                                 </label>
-                                <input className="input" placeholder="Acme Inc."
-                                    value={name} onChange={e => setName(e.target.value)} required />
+                                <input
+                                    className="input"
+                                    type="text"
+                                    placeholder="e.g. Acme Corp"
+                                    value={form.name}
+                                    onChange={e => setForm({ ...form, name: e.target.value })}
+                                    required
+                                    autoComplete="organization"
+                                />
                             </div>
                         )}
 
-                        <div style={{ marginBottom: 16 }}>
-                            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>
-                                Email
+                        <div>
+                            <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                                Email Address
                             </label>
-                            <input className="input" type="email" placeholder="you@company.com"
-                                value={email} onChange={e => setEmail(e.target.value)} required />
+                            <input
+                                className="input"
+                                type="email"
+                                placeholder="admin@company.com"
+                                value={form.email}
+                                onChange={e => setForm({ ...form, email: e.target.value })}
+                                required
+                                autoComplete="email"
+                            />
                         </div>
 
-                        <div style={{ marginBottom: 28 }}>
-                            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>
+                        <div>
+                            <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
                                 Password
                             </label>
-                            <input className="input" type="password" placeholder="••••••••"
-                                value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+                            <input
+                                className="input"
+                                type="password"
+                                placeholder="••••••••"
+                                value={form.password}
+                                onChange={e => setForm({ ...form, password: e.target.value })}
+                                required
+                                minLength={6}
+                                autoComplete={isRegister ? 'new-password' : 'current-password'}
+                            />
                         </div>
 
-                        <button type="submit" className="btn-primary" disabled={loading}
-                            style={{ width: '100%', justifyContent: 'center', padding: '12px 24px', fontSize: 14 }}>
-                            {loading ? <><div className="spinner" /> {coldStart ? 'Waking server...' : 'Please wait...'}</> : (isRegister ? 'Create workspace' : 'Sign in')}
-                        </button>
-
-                        {!isRegister && (
-                            <p style={{ fontSize: 11, color: 'var(--text-faint)', textAlign: 'center', marginTop: 12 }}>
-                                Demo: admin@rizetech.com / demo123
-                            </p>
+                        {isRegister && (
+                            <div>
+                                <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                                    Confirm Password
+                                </label>
+                                <input
+                                    className="input"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={form.confirmPassword}
+                                    onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
+                                    required
+                                    minLength={6}
+                                    autoComplete="new-password"
+                                />
+                            </div>
                         )}
-                    </form>
 
-                    <div style={{ textAlign: 'center', marginTop: 24 }}>
                         <button
-                            onClick={() => { setIsRegister(!isRegister); setError(''); }}
+                            type="submit"
+                            className="btn-primary"
+                            disabled={loading}
                             style={{
-                                background: 'none', border: 'none', color: 'var(--accent)',
-                                cursor: 'pointer', fontSize: 13, fontWeight: 500
+                                width: '100%', justifyContent: 'center',
+                                padding: '12px', fontSize: '15px', marginTop: '8px',
                             }}
                         >
-                            {isRegister ? 'Already have an account? Sign in' : "Don't have an account? Register"}
+                            {loading ? (
+                                <><span className="spinner" /> Processing...</>
+                            ) : (
+                                isRegister ? 'Create Organization' : 'Sign In'
+                            )}
                         </button>
-                    </div>
+                    </form>
+
+                    {!isRegister && (
+                        <div style={{
+                            marginTop: '24px', padding: '14px 16px', borderRadius: '10px',
+                            background: 'var(--accent-bg)', border: '1px solid var(--border-subtle)',
+                        }}>
+                            <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--accent)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Demo Credentials
+                            </div>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
+                                admin@rizetech.com / demo123
+                            </div>
+                        </div>
+                    )}
+
+                    <p style={{
+                        marginTop: '24px', fontSize: '12px', color: 'var(--text-dim)',
+                        textAlign: 'center', lineHeight: '1.6',
+                    }}>
+                        Built with React · Node.js · SQLite · Ethereum
+                    </p>
                 </div>
             </div>
 
-            {/* Responsive: hide left panel on mobile, show mobile logo */}
+            {/* Mobile: Hide left panel */}
             <style>{`
                 @media (max-width: 768px) {
-                    .login-left-panel { display: none !important; }
-                    .login-right-panel {
+                    #login-branding { display: none !important; }
+                    #login-branding + div {
                         width: 100% !important;
-                        min-width: unset !important;
-                        padding: 32px 20px !important;
+                        border-left: none !important;
                     }
-                    .login-mobile-logo { display: flex !important; }
                 }
             `}</style>
         </div>

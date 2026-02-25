@@ -123,3 +123,93 @@
 | Churn rate | <5%/month |
 | NPS | >50 |
 | Feature adoption (AI features used) | >60% of Pro users |
+
+---
+
+## Unit Economics
+
+| Metric | Value | Notes |
+|---|---|---|
+| **CAC (Customer Acquisition Cost)** | ₹150 | ₹5,000 budget / 33 paid conversions |
+| **LTV (Lifetime Value)** | ₹11,988 | ₹999/mo × 12 months avg retention |
+| **LTV:CAC Ratio** | 80:1 | Excellent; >3:1 is healthy |
+| **Payback Period** | <1 month | First month subscription covers CAC |
+| **Gross Margin** | ~85% | Low infra cost (SQLite → PostgreSQL on Railway ₹500/mo) |
+| **Monthly Burn** | ₹2,000 | Hosting + domain + API costs |
+| **Break-even** | Month 2 | At 3 paid customers |
+
+---
+
+## Customer Journey & Activation Funnel
+
+```
+Landing Page Visit → Sign Up (Free)  → Activate (Add 3+ employees)  → Engage (AI features)  → Convert (Pro plan)  → Expand (Add-ons)
+     100%               40%                    60%                       45%                      25%                   15%
+```
+
+### Activation Milestones
+1. **Day 0**: Sign up → auto-seed demo data for instant value
+2. **Day 1**: Add 3+ real employees, assign first task
+3. **Day 3**: View AI productivity scores, skill gap analysis
+4. **Day 7**: Connect MetaMask, log first on-chain task completion
+5. **Day 14**: Pro trial ends → conversion prompt with value summary
+
+### Retention Hooks
+| Hook | Description |
+|---|---|
+| **Weekly AI Digest** | Auto-email: team productivity trends, skill gaps, recommended actions |
+| **Milestone Celebrations** | In-app notifications: "Your team completed 100 tasks this month! 🎉" |
+| **Blockchain History** | On-chain records create switching cost — data is immutable |
+| **Integrations** | Slack/Discord notifications make RizeOS part of daily workflow |
+
+---
+
+## Web3-Specific GTM Strategy
+
+### Why Web3 is a Competitive Moat
+
+1. **Payroll Disputes**: ₹2,300 crore lost annually in India to payroll disputes (NASSCOM 2024)
+2. **Audit Trail**: Companies spend ₹50K–₹2L/year on compliance audits
+3. **Trust**: Blockchain-verified records eliminate "he said, she said"
+
+### Web3 Adoption Playbook
+
+| Phase | Timeline | Action |
+|---|---|---|
+| **Phase 1** | Month 1–2 | Free on-chain task logging (Sepolia testnet) for all users |
+| **Phase 2** | Month 3–4 | Migrate to Polygon mainnet (₹0.5/transaction vs ₹50+ on Ethereum) |
+| **Phase 3** | Month 5–6 | Launch "Payroll Proof" premium feature (₹199/mo) |
+| **Phase 4** | Month 7+ | Compliance audit reports with blockchain verification (₹999/quarter) |
+
+### Smart Contract Roadmap
+
+| Contract | Chain | Purpose |
+|---|---|---|
+| `TaskLogger.sol` | Sepolia (current) | Task completion events, immutable work history |
+| `PayrollProof.sol` | Polygon (planned) | Salary disbursement proofs with timestamps |
+| `SkillNFT.sol` | Polygon (planned) | Employee skill verification NFTs for portable credentials |
+
+---
+
+## Risk Mitigation
+
+| Risk | Probability | Impact | Mitigation |
+|---|---|---|---|
+| Low conversion rate | Medium | High | A/B test pricing, add Pro trial, show ROI calculator |
+| Enterprise competitor entry | Low | High | Move fast on AI features, build community moat |
+| Web3 user reluctance | High | Medium | Make Web3 optional, educate via content marketing |
+| Churn after Month 1 | Medium | Medium | Onboarding workflow, weekly AI digests, Slack integration |
+| Regulatory changes (crypto) | Low | Low | Web3 is optional; core HRMS works without blockchain |
+
+---
+
+## Success Criteria (Quarter 1)
+
+| KPI | Target | Measurement |
+|---|---|---|
+| Time-to-value | <5 minutes | First AI insight after signup |
+| Feature adoption | >60% | Users who use at least 2 AI features |
+| Web3 adoption | >20% | Users who connect MetaMask |
+| Monthly active orgs | 100 | Organizations with login activity in last 30 days |
+| Revenue | ₹35,000 MRR | Recurring monthly revenue from Pro + Enterprise |
+

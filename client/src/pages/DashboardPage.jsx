@@ -40,11 +40,9 @@ export default function DashboardPage() {
 
     if (loading) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div className="spinner" style={{ margin: '0 auto 12px', width: 28, height: 28 }} />
-                    <p style={{ color: 'var(--text-dim)', fontSize: 13 }}>Loading dashboard...</p>
-                </div>
+            <div className="page-loader">
+                <div className="spinner-lg" />
+                <p style={{ color: 'var(--text-dim)', fontSize: 13 }}>Loading dashboard...</p>
             </div>
         );
     }
@@ -90,26 +88,30 @@ export default function DashboardPage() {
             )}
 
             {/* Stats Grid */}
-            <div className="stat-grid-responsive" style={{
+            <div className="stat-grid-responsive stagger-children" style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
-                gap: 12,
+                gap: 14,
                 marginBottom: 24
             }}>
                 {statCards.map((card, i) => (
-                    <div key={i} className="card card-hover" style={{ padding: 18 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div key={i} className="card card-hover stat-card" style={{ padding: 20 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                             <div style={{
-                                width: 34, height: 34, borderRadius: 8,
-                                background: 'var(--bg-hover)',
+                                width: 38, height: 38, borderRadius: 10,
+                                background: `${card.color}15`,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: card.color
                             }}>
                                 {card.icon}
                             </div>
+                            <div className="ai-label" style={{ fontSize: 9 }}>
+                                <span style={{ width: 4, height: 4, borderRadius: '50%', background: card.color }} />
+                                Live
+                            </div>
                         </div>
-                        <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{card.value}</p>
-                        <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>{card.label}</p>
+                        <p className="stat-value" style={{ color: card.color }}>{card.value}</p>
+                        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, fontWeight: 500 }}>{card.label}</p>
                     </div>
                 ))}
             </div>

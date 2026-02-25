@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import api from '../services/api';
 import web3Service from '../services/web3';
 import { HiOutlinePlus, HiOutlineX, HiOutlineExternalLink, HiOutlineClipboardList, HiOutlineLightningBolt } from 'react-icons/hi';
@@ -57,13 +57,13 @@ export default function TasksPage() {
     const handleStatusChange = async (taskId, newStatus, employeeId) => {
         try {
             await api.put(`/tasks/${taskId}/status`, { status: newStatus });
-            showToast(`Status → ${newStatus.replace('_', ' ')}`);
+            showToast(`Status â†’ ${newStatus.replace('_', ' ')}`);
             if (newStatus === 'completed' && web3Service.getAddress()) {
                 try {
                     showToast('Logging to blockchain...', 'success');
                     const result = await web3Service.logTaskOnChain(employeeId, taskId);
                     await api.put(`/tasks/${taskId}/tx-hash`, { tx_hash: result.txHash });
-                    showToast('✅ Logged on Sepolia!');
+                    showToast('âœ… Logged on Sepolia!');
                 } catch (web3Err) {
                     console.error('Web3 logging failed:', web3Err);
                     showToast(`Web3: ${web3Err.message || web3Err}`, 'error');
@@ -104,7 +104,7 @@ export default function TasksPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
                 <div style={{ textAlign: 'center' }}>
                     <div className="spinner" style={{ margin: '0 auto 12px', width: 28, height: 28 }} />
-                    <p style={{ color: '#52525b', fontSize: 13 }}>Loading tasks...</p>
+                    <p style={{ color: 'var(--text-dim)', fontSize: 13 }}>Loading tasks...</p>
                 </div>
             </div>
         );
@@ -115,17 +115,17 @@ export default function TasksPage() {
             {/* Header */}
             <div className="page-header-responsive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                 <div>
-                    <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>Tasks</h1>
-                    <p style={{ color: '#52525b', fontSize: 13, marginTop: 4 }}>{tasks.length} total tasks</p>
+                    <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Tasks</h1>
+                    <p style={{ color: 'var(--text-dim)', fontSize: 13, marginTop: 4 }}>{tasks.length} total tasks</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     {walletAddr ? (
                         <span className="badge badge-skill" style={{ fontSize: 11 }}>
-                            🦊 {walletAddr.slice(0, 6)}…{walletAddr.slice(-4)}
+                            ðŸ¦Š {walletAddr.slice(0, 6)}â€¦{walletAddr.slice(-4)}
                         </span>
                     ) : (
                         <button className="btn-ghost" onClick={connectWallet}>
-                            🦊 Connect Wallet
+                            ðŸ¦Š Connect Wallet
                         </button>
                     )}
                     <button className="btn-primary" onClick={() => setShowModal(true)}>
@@ -147,9 +147,9 @@ export default function TasksPage() {
                         style={{
                             padding: '6px 14px', borderRadius: 100, fontSize: 12, fontWeight: 500,
                             cursor: 'pointer', transition: 'all 0.15s',
-                            background: filter.status === f.key ? '#27272a' : 'transparent',
-                            border: `1px solid ${filter.status === f.key ? '#3f3f46' : '#27272a'}`,
-                            color: filter.status === f.key ? '#fafafa' : '#71717a'
+                            background: filter.status === f.key ? 'var(--bg-hover)' : 'transparent',
+                            border: `1px solid ${filter.status === f.key ? 'var(--text-faint)' : 'var(--bg-hover)'}`,
+                            color: filter.status === f.key ? 'var(--text-primary)' : 'var(--text-muted)'
                         }}>
                         {f.label}
                     </button>
@@ -175,29 +175,29 @@ export default function TasksPage() {
                                     {task.status.replace('_', ' ')}
                                 </span>
                                 {isOverdue(task) && (
-                                    <span style={{ fontSize: 10, color: '#ef4444', fontWeight: 600 }}>⚠ OVERDUE</span>
+                                    <span style={{ fontSize: 10, color: 'var(--danger)', fontWeight: 600 }}>âš  OVERDUE</span>
                                 )}
                             </div>
                             {task.deadline && (
-                                <span style={{ fontSize: 11, color: isOverdue(task) ? '#ef4444' : '#52525b' }}>
+                                <span style={{ fontSize: 11, color: isOverdue(task) ? 'var(--danger)' : 'var(--text-dim)' }}>
                                     Due {new Date(task.deadline).toLocaleDateString()}
                                 </span>
                             )}
                         </div>
 
-                        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#e4e4e7', marginBottom: 4 }}>{task.title}</h3>
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>{task.title}</h3>
                         {task.description && (
-                            <p style={{ fontSize: 13, color: '#52525b', marginBottom: 12, lineHeight: 1.5 }}>{task.description}</p>
+                            <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 12, lineHeight: 1.5 }}>{task.description}</p>
                         )}
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                             <div style={{
                                 width: 22, height: 22, borderRadius: '50%',
-                                background: '#27272a',
+                                background: 'var(--bg-hover)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 10, fontWeight: 600, color: '#a1a1aa'
+                                fontSize: 10, fontWeight: 600, color: 'var(--text-secondary)'
                             }}>{task.employee_name?.charAt(0)}</div>
-                            <span style={{ fontSize: 12, color: '#71717a' }}>{task.employee_name}</span>
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{task.employee_name}</span>
                         </div>
 
                         {/* Actions */}
@@ -205,12 +205,12 @@ export default function TasksPage() {
                             {nextStatus[task.status] && (
                                 <button onClick={() => handleStatusChange(task.id, nextStatus[task.status], task.employee_id)}
                                     className="btn-primary" style={{ fontSize: 12, padding: '5px 12px' }}>
-                                    → {nextStatus[task.status].replace('_', ' ')}
+                                    â†’ {nextStatus[task.status].replace('_', ' ')}
                                 </button>
                             )}
                             {task.tx_hash && (
                                 <a href={`https://sepolia.etherscan.io/tx/${task.tx_hash}`} target="_blank" rel="noreferrer"
-                                    style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#6366f1', textDecoration: 'none' }}>
+                                    style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>
                                     <HiOutlineExternalLink size={13} /> Etherscan
                                 </a>
                             )}
@@ -221,8 +221,8 @@ export default function TasksPage() {
 
             {filteredTasks.length === 0 && !loading && (
                 <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-                    <HiOutlineClipboardList size={36} style={{ color: '#27272a', margin: '0 auto 10px', display: 'block' }} />
-                    <p style={{ color: '#3f3f46', fontSize: 13 }}>
+                    <HiOutlineClipboardList size={36} style={{ color: 'var(--bg-hover)', margin: '0 auto 10px', display: 'block' }} />
+                    <p style={{ color: 'var(--text-faint)', fontSize: 13 }}>
                         {tasks.length === 0 ? 'No tasks yet. Assign a task to get started.' : 'No tasks match the current filter.'}
                     </p>
                 </div>
@@ -233,26 +233,26 @@ export default function TasksPage() {
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-                            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#fafafa' }}>Assign Task</h2>
+                            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Assign Task</h2>
                             <button onClick={() => setShowModal(false)} className="btn-ghost"><HiOutlineX size={18} /></button>
                         </div>
                         <form onSubmit={handleCreate}>
                             <div style={{ marginBottom: 14 }}>
-                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Task Title</label>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>Task Title</label>
                                 <input className="input" required placeholder="Design homepage UI" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
                             </div>
                             <div style={{ marginBottom: 14 }}>
-                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Description</label>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>Description</label>
                                 <textarea className="input" rows={2} placeholder="Details..." style={{ resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
                             </div>
                             <div style={{ marginBottom: 14 }}>
-                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Required Skills</label>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>Required Skills</label>
                                 <div style={{ display: 'flex', gap: 8 }}>
                                     <input className="input" style={{ flex: 1 }} placeholder="React, Node.js, Docker" value={form.required_skills} onChange={e => setForm({ ...form, required_skills: e.target.value })} />
                                     <button type="button" onClick={fetchSmartSuggestions} disabled={aiLoading}
                                         style={{
                                             padding: '8px 14px', border: '1px solid #6366f1', borderRadius: 8,
-                                            background: 'rgba(99,102,241,0.1)', color: '#818cf8', fontSize: 12, fontWeight: 600,
+                                            background: 'rgba(99,102,241,0.1)', color: 'var(--accent)', fontSize: 12, fontWeight: 600,
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
                                             opacity: aiLoading ? 0.5 : 1
                                         }}>
@@ -264,16 +264,16 @@ export default function TasksPage() {
 
                             {/* AI Suggestions Panel */}
                             {aiSuggestions && aiSuggestions.suggestions?.length > 0 && (
-                                <div style={{ marginBottom: 16, padding: 12, background: '#0f0f11', borderRadius: 10, border: '1px solid #27272a' }}>
-                                    <p style={{ fontSize: 11, fontWeight: 600, color: '#818cf8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                        ⚡ AI Recommendations
+                                <div style={{ marginBottom: 16, padding: 12, background: 'var(--bg-elevated)', borderRadius: 10, border: '1px solid #27272a' }}>
+                                    <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                        âš¡ AI Recommendations
                                     </p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         {aiSuggestions.suggestions.map((s, i) => (
                                             <div key={s.employeeId} onClick={() => { setForm({ ...form, employee_id: String(s.employeeId) }); showToast(`Selected ${s.name}`); }}
                                                 style={{
                                                     padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
-                                                    background: form.employee_id === String(s.employeeId) ? 'rgba(99,102,241,0.15)' : '#18181b',
+                                                    background: form.employee_id === String(s.employeeId) ? 'rgba(99,102,241,0.15)' : 'var(--bg-card)',
                                                     border: form.employee_id === String(s.employeeId) ? '1px solid #6366f1' : '1px solid #27272a',
                                                     transition: 'all 0.15s'
                                                 }}>
@@ -284,34 +284,34 @@ export default function TasksPage() {
                                                             background: i === 0 ? 'rgba(34,197,94,0.1)' : i === 1 ? 'rgba(59,130,246,0.1)' : 'rgba(234,179,8,0.1)',
                                                             padding: '2px 6px', borderRadius: 4
                                                         }}>#{i + 1}</span>
-                                                        <span style={{ fontSize: 13, fontWeight: 600, color: '#e4e4e7' }}>{s.name}</span>
-                                                        <span style={{ fontSize: 11, color: '#52525b' }}>{s.role}</span>
+                                                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</span>
+                                                        <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{s.role}</span>
                                                     </div>
                                                     <span style={{ fontSize: 18, fontWeight: 800, color: s.compositeScore >= 70 ? '#22c55e' : s.compositeScore >= 50 ? '#3b82f6' : '#eab308' }}>{s.compositeScore}</span>
                                                 </div>
                                                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                                     {s.reasons.map((r, j) => (
-                                                        <span key={j} style={{ fontSize: 10, color: '#71717a', background: '#27272a', padding: '2px 6px', borderRadius: 4 }}>{r}</span>
+                                                        <span key={j} style={{ fontSize: 10, color: 'var(--text-muted)', background: 'var(--bg-hover)', padding: '2px 6px', borderRadius: 4 }}>{r}</span>
                                                     ))}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                    <p style={{ fontSize: 10, color: '#3f3f46', marginTop: 8, textAlign: 'center' }}>
+                                    <p style={{ fontSize: 10, color: 'var(--text-faint)', marginTop: 8, textAlign: 'center' }}>
                                         {aiSuggestions.algorithm?.description}
                                     </p>
                                 </div>
                             )}
 
                             <div style={{ marginBottom: 14 }}>
-                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Employee</label>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>Employee</label>
                                 <select className="input" required value={form.employee_id} onChange={e => setForm({ ...form, employee_id: e.target.value })}>
                                     <option value="">Select employee...</option>
-                                    {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} — {emp.role}</option>)}
+                                    {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} â€” {emp.role}</option>)}
                                 </select>
                             </div>
                             <div style={{ marginBottom: 20 }}>
-                                <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>Deadline</label>
+                                <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>Deadline</label>
                                 <input className="input" type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} />
                             </div>
                             <div style={{ display: 'flex', gap: 10 }}>
@@ -327,3 +327,4 @@ export default function TasksPage() {
         </div>
     );
 }
+

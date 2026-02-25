@@ -41,12 +41,12 @@ export default function LoginPage() {
             {/* Left panel — branding */}
             <div style={{
                 flex: 1,
-                background: '#09090b',
+                background: 'var(--bg-body)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 padding: '60px 48px',
-                borderRight: '1px solid #27272a',
+                borderRight: '1px solid var(--border-default)',
                 position: 'relative',
                 overflow: 'hidden'
             }}
@@ -55,7 +55,7 @@ export default function LoginPage() {
                 {/* Subtle grid pattern */}
                 <div style={{
                     position: 'absolute', inset: 0, opacity: 0.03,
-                    backgroundImage: 'radial-gradient(#fafafa 1px, transparent 1px)',
+                    backgroundImage: 'radial-gradient(var(--text-primary) 1px, transparent 1px)',
                     backgroundSize: '24px 24px',
                     pointerEvents: 'none'
                 }} />
@@ -66,18 +66,18 @@ export default function LoginPage() {
                         marginBottom: 48
                     }}>
                         <img src="/RizeOS.png" alt="RizeOS" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
-                        <span style={{ fontSize: 18, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>RizeOS</span>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>RizeOS</span>
                     </div>
 
                     <h1 style={{
-                        fontSize: 40, fontWeight: 700, color: '#fafafa',
+                        fontSize: 40, fontWeight: 700, color: 'var(--text-primary)',
                         lineHeight: 1.15, letterSpacing: '-0.03em', marginBottom: 20
                     }}>
                         Workforce intelligence,<br />
                         <span style={{ color: '#6366f1' }}>reimagined.</span>
                     </h1>
 
-                    <p style={{ fontSize: 16, color: '#71717a', lineHeight: 1.6, marginBottom: 40 }}>
+                    <p style={{ fontSize: 16, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 40 }}>
                         AI-powered productivity scoring, skill gap detection,
                         and on-chain task verification — all in one platform.
                     </p>
@@ -90,7 +90,7 @@ export default function LoginPage() {
                         ].map((feat, i) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <span style={{ fontSize: 18 }}>{feat.icon}</span>
-                                <span style={{ fontSize: 14, color: '#a1a1aa' }}>{feat.text}</span>
+                                <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{feat.text}</span>
                             </div>
                         ))}
                     </div>
@@ -105,7 +105,7 @@ export default function LoginPage() {
                 flexDirection: 'column',
                 justifyContent: 'center',
                 padding: '48px 40px',
-                background: '#0a0a0c'
+                background: 'var(--bg-card)'
             }}
                 className="login-right-panel"
             >
@@ -116,21 +116,21 @@ export default function LoginPage() {
                         marginBottom: 32, justifyContent: 'center'
                     }}>
                         <img src="/RizeOS.png" alt="RizeOS" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
-                        <span style={{ fontSize: 20, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>RizeOS</span>
+                        <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>RizeOS</span>
                     </div>
 
-                    <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fafafa', marginBottom: 6, letterSpacing: '-0.02em' }}>
+                    <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, letterSpacing: '-0.02em' }}>
                         {isRegister ? 'Create your workspace' : 'Welcome back'}
                     </h2>
-                    <p style={{ color: '#71717a', fontSize: 14, marginBottom: 32 }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 32 }}>
                         {isRegister ? 'Set up your organization to get started' : 'Sign in to continue to RizeOS'}
                     </p>
 
                     {error && (
                         <div style={{
-                            background: '#2a1215',
-                            border: '1px solid #7f1d1d',
-                            color: '#fca5a5',
+                            background: 'var(--danger-bg)',
+                            border: '1px solid var(--danger)',
+                            color: 'var(--danger-text)',
                             padding: '10px 14px',
                             borderRadius: 8,
                             fontSize: 13,
@@ -158,7 +158,7 @@ export default function LoginPage() {
                     <form onSubmit={handleSubmit}>
                         {isRegister && (
                             <div style={{ marginBottom: 16 }}>
-                                <label style={{ fontSize: 13, fontWeight: 500, color: '#a1a1aa', marginBottom: 6, display: 'block' }}>
+                                <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>
                                     Organization name
                                 </label>
                                 <input className="input" placeholder="Acme Inc."
@@ -167,7 +167,7 @@ export default function LoginPage() {
                         )}
 
                         <div style={{ marginBottom: 16 }}>
-                            <label style={{ fontSize: 13, fontWeight: 500, color: '#a1a1aa', marginBottom: 6, display: 'block' }}>
+                            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>
                                 Email
                             </label>
                             <input className="input" type="email" placeholder="you@company.com"
@@ -175,7 +175,7 @@ export default function LoginPage() {
                         </div>
 
                         <div style={{ marginBottom: 28 }}>
-                            <label style={{ fontSize: 13, fontWeight: 500, color: '#a1a1aa', marginBottom: 6, display: 'block' }}>
+                            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>
                                 Password
                             </label>
                             <input className="input" type="password" placeholder="••••••••"
@@ -188,7 +188,7 @@ export default function LoginPage() {
                         </button>
 
                         {!isRegister && (
-                            <p style={{ fontSize: 11, color: '#3f3f46', textAlign: 'center', marginTop: 12 }}>
+                            <p style={{ fontSize: 11, color: 'var(--text-faint)', textAlign: 'center', marginTop: 12 }}>
                                 Demo: admin@rizetech.com / demo123
                             </p>
                         )}
@@ -198,7 +198,7 @@ export default function LoginPage() {
                         <button
                             onClick={() => { setIsRegister(!isRegister); setError(''); }}
                             style={{
-                                background: 'none', border: 'none', color: '#6366f1',
+                                background: 'none', border: 'none', color: 'var(--accent)',
                                 cursor: 'pointer', fontSize: 13, fontWeight: 500
                             }}
                         >

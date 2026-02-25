@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineChartBar, HiOutlinePuzzle, HiOutlineX, HiOutlineUserGroup, HiOutlineSearch, HiOutlineDownload } from 'react-icons/hi';
 
@@ -76,10 +76,10 @@ export default function EmployeesPage() {
 
     const trendIcon = (empId) => {
         const t = trends[empId];
-        if (!t) return <span style={{ color: '#3f3f46' }}>—</span>;
-        if (t.trend === 'improving') return <span className="trend-up" title={t.summary} style={{ fontWeight: 700, fontSize: 14 }}>↑</span>;
-        if (t.trend === 'declining') return <span className="trend-down" title={t.summary} style={{ fontWeight: 700, fontSize: 14 }}>↓</span>;
-        return <span className="trend-stable" title={t.summary} style={{ fontWeight: 700, fontSize: 14 }}>→</span>;
+        if (!t) return <span style={{ color: 'var(--text-faint)' }}>â€”</span>;
+        if (t.trend === 'improving') return <span className="trend-up" title={t.summary} style={{ fontWeight: 700, fontSize: 14 }}>â†‘</span>;
+        if (t.trend === 'declining') return <span className="trend-down" title={t.summary} style={{ fontWeight: 700, fontSize: 14 }}>â†“</span>;
+        return <span className="trend-stable" title={t.summary} style={{ fontWeight: 700, fontSize: 14 }}>â†’</span>;
     };
 
     const showToast = (msg, type = 'success') => {
@@ -128,14 +128,14 @@ export default function EmployeesPage() {
         catch { showToast('Error loading AI data', 'error'); }
     };
 
-    const scoreColor = (s) => s >= 85 ? '#22c55e' : s >= 70 ? '#3b82f6' : s >= 50 ? '#eab308' : '#ef4444';
+    const scoreColor = (s) => s >= 85 ? '#22c55e' : s >= 70 ? '#3b82f6' : s >= 50 ? '#eab308' : 'var(--danger)';
 
     if (loading) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
                 <div style={{ textAlign: 'center' }}>
                     <div className="spinner" style={{ margin: '0 auto 12px', width: 28, height: 28 }} />
-                    <p style={{ color: '#52525b', fontSize: 13 }}>Loading employees...</p>
+                    <p style={{ color: 'var(--text-dim)', fontSize: 13 }}>Loading employees...</p>
                 </div>
             </div>
         );
@@ -145,8 +145,8 @@ export default function EmployeesPage() {
         <div className="animate-in">
             <div className="page-header-responsive" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                    <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>Employees</h1>
-                    <p style={{ color: '#52525b', fontSize: 13, marginTop: 4 }}>{filtered.length} of {employees.length} members</p>
+                    <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Employees</h1>
+                    <p style={{ color: 'var(--text-dim)', fontSize: 13, marginTop: 4 }}>{filtered.length} of {employees.length} members</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                     <button className="btn-ghost" onClick={handleExportCsv} title="Export CSV" style={{ padding: '8px 14px', fontSize: 12 }}>
@@ -161,7 +161,7 @@ export default function EmployeesPage() {
             {/* Search and Filters */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
                 <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-                    <HiOutlineSearch size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#52525b' }} />
+                    <HiOutlineSearch size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
                     <input className="input" placeholder="Search by name, role, department..." value={search} onChange={e => setSearch(e.target.value)}
                         style={{ paddingLeft: 34, fontSize: 12 }} />
                 </div>
@@ -178,7 +178,7 @@ export default function EmployeesPage() {
                     <thead>
                         <tr style={{ borderBottom: '1px solid #27272a' }}>
                             {['Name', 'Role', 'Department', 'Skills', 'Score', 'Trend', 'AI', 'Actions'].map(h => (
-                                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                             ))}
                         </tr>
                     </thead>
@@ -189,30 +189,30 @@ export default function EmployeesPage() {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                         <div style={{
                                             width: 32, height: 32, borderRadius: '50%',
-                                            background: '#27272a',
+                                            background: 'var(--bg-hover)',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: 13, fontWeight: 600, color: '#a1a1aa'
+                                            fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)'
                                         }}>{emp.name.charAt(0)}</div>
                                         <div>
-                                            <p style={{ fontWeight: 600, fontSize: 13, color: '#e4e4e7', cursor: 'pointer' }} onClick={() => setProfileEmp(emp)}>{emp.name}</p>
+                                            <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => setProfileEmp(emp)}>{emp.name}</p>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                <p style={{ fontSize: 11, color: '#52525b' }}>{emp.email}</p>
+                                                <p style={{ fontSize: 11, color: 'var(--text-dim)' }}>{emp.email}</p>
                                                 {emp.wallet_address && (
-                                                    <span title={emp.wallet_address} style={{ fontSize: 9, padding: '1px 5px', background: 'rgba(249,115,22,0.1)', color: '#f97316', borderRadius: 4, fontFamily: 'monospace' }}>⟠ {emp.wallet_address.slice(0, 6)}…</span>
+                                                    <span title={emp.wallet_address} style={{ fontSize: 9, padding: '1px 5px', background: 'rgba(249,115,22,0.1)', color: 'var(--warning)', borderRadius: 4, fontFamily: 'monospace' }}>âŸ  {emp.wallet_address.slice(0, 6)}â€¦</span>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                 </td>
-                                <td style={{ padding: '14px 16px', fontSize: 13, color: '#a1a1aa' }}>{emp.role}</td>
-                                <td style={{ padding: '14px 16px', fontSize: 13, color: '#a1a1aa' }}>{emp.department}</td>
+                                <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>{emp.role}</td>
+                                <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>{emp.department}</td>
                                 <td style={{ padding: '14px 16px' }}>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                         {(emp.skills || []).slice(0, 3).map(s => (
                                             <span key={s} className="badge badge-skill">{s}</span>
                                         ))}
                                         {(emp.skills || []).length > 3 && (
-                                            <span className="badge" style={{ background: '#27272a', color: '#71717a' }}>+{emp.skills.length - 3}</span>
+                                            <span className="badge" style={{ background: 'var(--bg-hover)', color: 'var(--text-muted)' }}>+{emp.skills.length - 3}</span>
                                         )}
                                     </div>
                                 </td>
@@ -226,7 +226,7 @@ export default function EmployeesPage() {
                                                 {aiScores[emp.id].score}
                                             </span>
                                         </div>
-                                    ) : <span style={{ fontSize: 12, color: '#3f3f46' }}>—</span>}
+                                    ) : <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>â€”</span>}
                                 </td>
                                 <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                                     {trendIcon(emp.id)}
@@ -248,7 +248,7 @@ export default function EmployeesPage() {
                                         <button onClick={() => handleEdit(emp)} className="btn-ghost" style={{ padding: '6px 8px', color: '#3b82f6' }}>
                                             <HiOutlinePencil size={15} />
                                         </button>
-                                        <button onClick={() => handleDelete(emp.id)} className="btn-ghost" style={{ padding: '6px 8px', color: '#ef4444' }}>
+                                        <button onClick={() => handleDelete(emp.id)} className="btn-ghost" style={{ padding: '6px 8px', color: 'var(--danger)' }}>
                                             <HiOutlineTrash size={15} />
                                         </button>
                                     </div>
@@ -259,8 +259,8 @@ export default function EmployeesPage() {
                 </table>
                 {employees.length === 0 && (
                     <div style={{ padding: 48, textAlign: 'center' }}>
-                        <HiOutlineUserGroup size={36} style={{ color: '#27272a', margin: '0 auto 10px', display: 'block' }} />
-                        <p style={{ color: '#3f3f46', fontSize: 13 }}>No employees yet. Click "Add Employee" to start.</p>
+                        <HiOutlineUserGroup size={36} style={{ color: 'var(--bg-hover)', margin: '0 auto 10px', display: 'block' }} />
+                        <p style={{ color: 'var(--text-faint)', fontSize: 13 }}>No employees yet. Click "Add Employee" to start.</p>
                     </div>
                 )}
             </div>
@@ -270,7 +270,7 @@ export default function EmployeesPage() {
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-                            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#fafafa' }}>{editId ? 'Edit Employee' : 'Add Employee'}</h2>
+                            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{editId ? 'Edit Employee' : 'Add Employee'}</h2>
                             <button onClick={() => setShowModal(false)} className="btn-ghost"><HiOutlineX size={18} /></button>
                         </div>
                         <form onSubmit={handleSubmit}>
@@ -283,7 +283,7 @@ export default function EmployeesPage() {
                                 { label: 'Wallet Address', key: 'wallet_address', type: 'text', placeholder: '0x...' },
                             ].map(f => (
                                 <div key={f.key} style={{ marginBottom: 14 }}>
-                                    <label style={{ fontSize: 12, fontWeight: 500, color: '#a1a1aa', marginBottom: 5, display: 'block' }}>{f.label}</label>
+                                    <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>{f.label}</label>
                                     <input className="input" type={f.type} placeholder={f.placeholder} required={f.required}
                                         value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })} />
                                 </div>
@@ -304,7 +304,7 @@ export default function EmployeesPage() {
                 <div className="modal-overlay" onClick={() => setAiPanel(null)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#fafafa' }}>
+                            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
                                 {aiPanel.type === 'productivity' ? 'Productivity Score' : 'Skill Gap Analysis'}
                             </h2>
                             <button onClick={() => setAiPanel(null)} className="btn-ghost"><HiOutlineX size={18} /></button>
@@ -314,8 +314,8 @@ export default function EmployeesPage() {
                             <div>
                                 <div style={{ textAlign: 'center', marginBottom: 20 }}>
                                     <p style={{ fontSize: 44, fontWeight: 800, color: scoreColor(aiPanel.data.score), letterSpacing: '-0.03em' }}>{aiPanel.data.score}</p>
-                                    <p style={{ fontSize: 13, color: '#71717a', marginTop: 2 }}>{aiPanel.data.rating} Performance</p>
-                                    {aiPanel.data.message && <p style={{ fontSize: 12, color: '#52525b', marginTop: 6 }}>{aiPanel.data.message}</p>}
+                                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{aiPanel.data.rating} Performance</p>
+                                    {aiPanel.data.message && <p style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 6 }}>{aiPanel.data.message}</p>}
                                 </div>
                                 <div className="progress-bar" style={{ marginBottom: 18 }}>
                                     <div className="progress-fill" style={{ width: `${aiPanel.data.score}%`, background: scoreColor(aiPanel.data.score) }} />
@@ -327,9 +327,9 @@ export default function EmployeesPage() {
                                         { label: 'Completion', value: `${aiPanel.data.details.completionRate}%` },
                                         { label: 'On-Time', value: `${aiPanel.data.details.deadlineAdherence}%` },
                                     ].map((item, i) => (
-                                        <div key={i} style={{ padding: 12, background: '#0f0f11', borderRadius: 8, textAlign: 'center' }}>
-                                            <p style={{ fontSize: 18, fontWeight: 700, color: '#e4e4e7' }}>{item.value}</p>
-                                            <p style={{ fontSize: 11, color: '#52525b', marginTop: 2 }}>{item.label}</p>
+                                        <div key={i} style={{ padding: 12, background: 'var(--bg-elevated)', borderRadius: 8, textAlign: 'center' }}>
+                                            <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{item.value}</p>
+                                            <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{item.label}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -345,14 +345,14 @@ export default function EmployeesPage() {
                             <div>
                                 <div style={{ textAlign: 'center', marginBottom: 18 }}>
                                     <p style={{ fontSize: 36, fontWeight: 800, color: scoreColor(aiPanel.data.matchPercentage), letterSpacing: '-0.03em' }}>{aiPanel.data.matchPercentage}%</p>
-                                    <p style={{ fontSize: 13, color: '#71717a' }}>Skill Match · {aiPanel.data.level}</p>
+                                    <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Skill Match Â· {aiPanel.data.level}</p>
                                 </div>
                                 <div className="progress-bar" style={{ marginBottom: 20 }}>
-                                    <div className="progress-fill" style={{ width: `${aiPanel.data.matchPercentage}%`, background: '#6366f1' }} />
+                                    <div className="progress-fill" style={{ width: `${aiPanel.data.matchPercentage}%`, background: 'var(--accent)' }} />
                                 </div>
                                 {aiPanel.data.matchedSkills?.length > 0 && (
                                     <div style={{ marginBottom: 14 }}>
-                                        <p style={{ fontSize: 12, fontWeight: 600, color: '#71717a', marginBottom: 6 }}>✓ Matched Skills</p>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>âœ“ Matched Skills</p>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                             {aiPanel.data.matchedSkills.map(s => <span key={s} className="badge badge-skill">{s}</span>)}
                                         </div>
@@ -360,7 +360,7 @@ export default function EmployeesPage() {
                                 )}
                                 {aiPanel.data.missingSkills?.length > 0 && (
                                     <div style={{ marginBottom: 14 }}>
-                                        <p style={{ fontSize: 12, fontWeight: 600, color: '#ef4444', marginBottom: 6 }}>✗ Missing Skills</p>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--danger)', marginBottom: 6 }}>âœ— Missing Skills</p>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                             {aiPanel.data.missingSkills.map(s => <span key={s} className="badge badge-missing">{s}</span>)}
                                         </div>
@@ -368,10 +368,10 @@ export default function EmployeesPage() {
                                 )}
                                 {aiPanel.data.suggestedCourses?.length > 0 && (
                                     <div>
-                                        <p style={{ fontSize: 12, fontWeight: 600, color: '#71717a', marginBottom: 6 }}>Suggested Courses</p>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Suggested Courses</p>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                             {aiPanel.data.suggestedCourses.map((c, i) => (
-                                                <div key={i} style={{ padding: '8px 12px', background: '#0f0f11', borderRadius: 6, fontSize: 12, color: '#a1a1aa' }}>{c}</div>
+                                                <div key={i} style={{ padding: '8px 12px', background: 'var(--bg-elevated)', borderRadius: 6, fontSize: 12, color: 'var(--text-secondary)' }}>{c}</div>
                                             ))}
                                         </div>
                                     </div>
@@ -387,24 +387,24 @@ export default function EmployeesPage() {
                 <div className="modal-overlay" onClick={() => setProfileEmp(null)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#fafafa' }}>Employee Profile</h2>
+                            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Employee Profile</h2>
                             <button onClick={() => setProfileEmp(null)} className="btn-ghost"><HiOutlineX size={18} /></button>
                         </div>
 
                         {/* Profile Header */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
                             <div style={{
-                                width: 48, height: 48, borderRadius: '50%', background: '#27272a',
+                                width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-hover)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 20, fontWeight: 700, color: '#a1a1aa'
+                                fontSize: 20, fontWeight: 700, color: 'var(--text-secondary)'
                             }}>{profileEmp.name.charAt(0)}</div>
                             <div>
-                                <p style={{ fontWeight: 700, fontSize: 16, color: '#fafafa' }}>{profileEmp.name}</p>
-                                <p style={{ fontSize: 12, color: '#71717a' }}>{profileEmp.role} · {profileEmp.department}</p>
+                                <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{profileEmp.name}</p>
+                                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{profileEmp.role} Â· {profileEmp.department}</p>
                                 {profileEmp.wallet_address && (
                                     <a href={`https://sepolia.etherscan.io/address/${profileEmp.wallet_address}`} target="_blank" rel="noreferrer"
-                                        style={{ fontSize: 10, color: '#f97316', fontFamily: 'monospace', textDecoration: 'none' }}>
-                                        ⟠ {profileEmp.wallet_address.slice(0, 10)}…{profileEmp.wallet_address.slice(-6)}
+                                        style={{ fontSize: 10, color: 'var(--warning)', fontFamily: 'monospace', textDecoration: 'none' }}>
+                                        âŸ  {profileEmp.wallet_address.slice(0, 10)}â€¦{profileEmp.wallet_address.slice(-6)}
                                     </a>
                                 )}
                             </div>
@@ -412,17 +412,17 @@ export default function EmployeesPage() {
 
                         {/* AI Score + Trend */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-                            <div style={{ padding: 14, background: '#0f0f11', borderRadius: 10, textAlign: 'center' }}>
-                                <p style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', marginBottom: 6 }}>AI Score</p>
-                                <p style={{ fontSize: 28, fontWeight: 800, color: aiScores[profileEmp.id] ? scoreColor(aiScores[profileEmp.id].score) : '#3f3f46' }}>
-                                    {aiScores[profileEmp.id]?.score ?? '—'}
+                            <div style={{ padding: 14, background: 'var(--bg-elevated)', borderRadius: 10, textAlign: 'center' }}>
+                                <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 6 }}>AI Score</p>
+                                <p style={{ fontSize: 28, fontWeight: 800, color: aiScores[profileEmp.id] ? scoreColor(aiScores[profileEmp.id].score) : 'var(--text-faint)' }}>
+                                    {aiScores[profileEmp.id]?.score ?? 'â€”'}
                                 </p>
-                                <p style={{ fontSize: 11, color: '#71717a' }}>{aiScores[profileEmp.id]?.rating || 'Loading...'}</p>
+                                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{aiScores[profileEmp.id]?.rating || 'Loading...'}</p>
                             </div>
-                            <div style={{ padding: 14, background: '#0f0f11', borderRadius: 10, textAlign: 'center' }}>
-                                <p style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', marginBottom: 6 }}>Trend</p>
+                            <div style={{ padding: 14, background: 'var(--bg-elevated)', borderRadius: 10, textAlign: 'center' }}>
+                                <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 6 }}>Trend</p>
                                 <p style={{ fontSize: 28, fontWeight: 800 }}>{trendIcon(profileEmp.id)}</p>
-                                <p style={{ fontSize: 11, color: '#71717a' }}>
+                                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                                     {trends[profileEmp.id]?.trend || 'Loading...'}
                                 </p>
                             </div>
@@ -430,8 +430,8 @@ export default function EmployeesPage() {
 
                         {/* Weekly Performance Bars */}
                         {trends[profileEmp.id]?.weeks && (
-                            <div style={{ marginBottom: 18, padding: 14, background: '#0f0f11', borderRadius: 10 }}>
-                                <p style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', marginBottom: 10 }}>Weekly Completions</p>
+                            <div style={{ marginBottom: 18, padding: 14, background: 'var(--bg-elevated)', borderRadius: 10 }}>
+                                <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 10 }}>Weekly Completions</p>
                                 <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 50 }}>
                                     {trends[profileEmp.id].weeks.map((w, i) => {
                                         const maxH = Math.max(...trends[profileEmp.id].weeks.map(wk => wk.completed), 1);
@@ -441,9 +441,9 @@ export default function EmployeesPage() {
                                                 <div style={{
                                                     height: h, borderRadius: 3, margin: '0 auto',
                                                     width: '60%',
-                                                    background: w.completed > 0 ? '#6366f1' : '#27272a',
+                                                    background: w.completed > 0 ? 'var(--accent)' : 'var(--bg-hover)',
                                                 }} />
-                                                <p style={{ fontSize: 9, color: '#52525b', marginTop: 4 }}>{w.week}</p>
+                                                <p style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4 }}>{w.week}</p>
                                             </div>
                                         );
                                     })}
@@ -453,7 +453,7 @@ export default function EmployeesPage() {
 
                         {/* Skills */}
                         <div style={{ marginBottom: 14 }}>
-                            <p style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', marginBottom: 8 }}>Skills</p>
+                            <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 8 }}>Skills</p>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                 {(profileEmp.skills || []).map(s => (
                                     <span key={s} className="badge badge-skill">{s}</span>
@@ -461,7 +461,7 @@ export default function EmployeesPage() {
                             </div>
                         </div>
 
-                        <p style={{ fontSize: 11, color: '#3f3f46', marginTop: 12 }}>
+                        <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 12 }}>
                             Joined {new Date(profileEmp.created_at).toLocaleDateString()}
                         </p>
                     </div>
@@ -472,3 +472,4 @@ export default function EmployeesPage() {
         </div>
     );
 }
+

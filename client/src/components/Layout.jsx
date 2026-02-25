@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import WalletConnect from './WalletConnect';
-import { HiOutlineViewGrid, HiOutlineUserGroup, HiOutlineClipboardList, HiOutlineLogout, HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
+import { HiOutlineViewGrid, HiOutlineUserGroup, HiOutlineClipboardList, HiOutlineLogout, HiOutlineMenu, HiOutlineX, HiOutlineMoon, HiOutlineSun, HiOutlineChartBar } from 'react-icons/hi';
 
 export default function Layout() {
     const { user, logout } = useAuth();
+    const { isDark, toggleTheme } = useTheme();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -15,6 +17,7 @@ export default function Layout() {
         { to: '/', icon: <HiOutlineViewGrid size={18} />, label: 'Dashboard' },
         { to: '/employees', icon: <HiOutlineUserGroup size={18} />, label: 'Employees' },
         { to: '/tasks', icon: <HiOutlineClipboardList size={18} />, label: 'Tasks' },
+        { to: '/analytics', icon: <HiOutlineChartBar size={18} />, label: 'Analytics' },
     ];
 
     return (
@@ -31,18 +34,19 @@ export default function Layout() {
             <aside className={`sidebar-mobile ${sidebarOpen ? 'open' : ''}`} style={{
                 width: 240,
                 padding: '20px 12px',
-                borderRight: '1px solid #27272a',
-                background: '#09090b',
+                borderRight: '1px solid var(--border-default)',
+                background: 'var(--bg-sidebar)',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'fixed',
                 top: 0, left: 0, bottom: 0,
-                zIndex: 10
+                zIndex: 10,
+                transition: 'background 0.2s ease'
             }}>
                 {/* Logo */}
                 <div style={{ padding: '4px 14px', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <img src="/RizeOS.png" alt="RizeOS" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
-                    <span style={{ fontSize: 16, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em' }}>RizeOS</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>RizeOS</span>
                 </div>
 
                 {/* Navigation */}
@@ -61,27 +65,35 @@ export default function Layout() {
                     ))}
                 </nav>
 
+                {/* Theme Toggle */}
+                <div style={{ padding: '0 6px', marginBottom: 8 }}>
+                    <button className="theme-toggle" onClick={toggleTheme}>
+                        {isDark ? <HiOutlineSun size={16} /> : <HiOutlineMoon size={16} />}
+                        {isDark ? 'Light Mode' : 'Dark Mode'}
+                    </button>
+                </div>
+
                 {/* Web3 */}
                 <div style={{ padding: '0 6px', marginBottom: 12 }}>
-                    <p style={{ fontSize: 10, fontWeight: 600, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, padding: '0 8px' }}>Web3</p>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, padding: '0 8px' }}>Web3</p>
                     <WalletConnect />
                 </div>
 
                 {/* User */}
-                <div style={{ padding: '14px 10px', borderTop: '1px solid #27272a', marginTop: 'auto' }}>
+                <div style={{ padding: '14px 10px', borderTop: '1px solid var(--border-default)', marginTop: 'auto' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                         <div style={{
                             width: 32, height: 32,
                             borderRadius: '50%',
-                            background: '#27272a',
+                            background: 'var(--bg-hover)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 13, fontWeight: 600, color: '#a1a1aa'
+                            fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)'
                         }}>
                             {user?.name?.charAt(0)?.toUpperCase() || 'O'}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: 13, fontWeight: 600, color: '#fafafa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name}</p>
-                            <p style={{ fontSize: 11, color: '#52525b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name}</p>
+                            <p style={{ fontSize: 11, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
                         </div>
                     </div>
                     <button onClick={handleLogout} className="btn-ghost"

@@ -30,7 +30,7 @@
 - 🔐 **Organization Authentication** — Register & login with JWT-based auth
 - 👥 **Employee Management** — Full CRUD with roles, departments, and skill tags
 - 📋 **Task Management** — Assign tasks, track status (assigned → in_progress → completed)
-- 📊 **Dashboard Analytics** — Real-time stats, top performers, department breakdown
+- 📊 **Dashboard Analytics** — Real-time stats, department performance charts, skill distribution cloud, overdue alerts, top performers with medals, activity feed
 
 ### AI Workforce Intelligence
 - 📈 **Productivity Scoring** — Weighted formula: 70% completion rate + 30% deadline adherence
@@ -41,9 +41,10 @@
 - ⚡ **Smart Task Assignment** — AI-powered employee recommendation for new tasks
   - Ranks all employees by: 50% skill match + 30% workload availability + 20% productivity history
   - Returns top 3 candidates with composite scores and human-readable reasoning
-- 📉 **Performance Trend Prediction** — 30-day rolling window comparison (embedded in productivity scoring)
-  - Compares completed tasks in last 30 days vs previous 30 days
-  - Returns: `improving` / `stable` / `declining` trend indicator
+- 📉 **Performance Trend Prediction** — 4-week rolling window analysis per employee
+  - Weekly completion counts with visual bar charts
+  - Returns: `improving` / `stable` / `declining` trend indicator with delta value
+  - Displayed via ↑ / → / ↓ indicators on employee table
 
 ### Web3 Integration
 - 🦊 **MetaMask Wallet Connect** — One-click wallet connection with Sepolia auto-switching
@@ -56,6 +57,9 @@
 - 🎨 **Custom Design System** — Purpose-built CSS with stat cards, badges, modals, and progress bars
 - 📱 **Responsive Layout** — Fixed sidebar navigation with Inter font typography
 - 🔔 **Toast Notifications** — Real-time feedback for all user actions
+- 💥 **Error Boundary** — Graceful crash recovery with refresh option
+- 🔍 **404 Page** — Styled page-not-found with navigation back to dashboard
+- 👤 **Employee Profiles** — Click-to-view detail panel with AI score, trend chart, and wallet link
 
 ---
 
@@ -82,7 +86,7 @@ npm start               # Starts on http://localhost:5000
 ### 3. Seed demo data (optional)
 ```bash
 cd server
-node seed.js             # Creates 8 employees, 12 tasks (admin@rizetech.com / demo123)
+node seed.js             # Creates 15 employees, 30 tasks across 6 departments (admin@rizetech.com / demo123)
 ```
 
 ### 4. Set up the frontend
@@ -133,6 +137,7 @@ Navigate to `http://localhost:5173`. Login with `admin@rizetech.com` / `demo123`
 | GET | `/api/ai/productivity/:employeeId` | Productivity score + trend |
 | GET | `/api/ai/skill-gap/:employeeId` | Skill gap analysis + courses |
 | GET | `/api/ai/suggest-assignment?skills=X,Y` | Smart task assignment — top 3 candidates |
+| GET | `/api/ai/trend/:employeeId` | 4-week rolling performance trend |
 
 ---
 

@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineChartBar, HiOutlinePuzzle, HiOutlineX, HiOutlineUserGroup, HiOutlineSearch, HiOutlineDownload } from 'react-icons/hi';
+import web3Service from '../services/web3';
+import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineChartBar, HiOutlinePuzzle, HiOutlineX, HiOutlineUserGroup, HiOutlineSearch, HiOutlineDownload, HiOutlineExternalLink, HiOutlineLightningBolt, HiOutlineCube } from 'react-icons/hi';
 
 export default function EmployeesPage() {
     const [employees, setEmployees] = useState([]);
@@ -19,6 +20,8 @@ export default function EmployeesPage() {
     const [payrollRecords, setPayrollRecords] = useState([]);
     const [payrollForm, setPayrollForm] = useState({ amount: '', period: '', notes: '' });
     const [savingPayroll, setSavingPayroll] = useState(false);
+    const [profileSkillGap, setProfileSkillGap] = useState(null);
+    const [loggingPayrollOnChain, setLoggingPayrollOnChain] = useState(false);
 
     const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
     const filtered = employees.filter(e => {
@@ -157,18 +160,45 @@ export default function EmployeesPage() {
         finally { setSavingPayroll(false); }
     };
 
-    const openProfile = (emp) => {
+    const openProfile = async (emp) => {
         setProfileEmp(emp);
+        setProfileSkillGap(null);
         loadPayroll(emp.id);
+        // Auto-fetch AI data for profile
+        if (!aiScores[emp.id]) fetchProductivity(emp.id);
+        if (!trends[emp.id]) {
+            try { const res = await api.get(`/ai/trend/${emp.id}`); setTrends(prev => ({ ...prev, [emp.id]: res.data })); } catch { /* ignore */ }
+        }
+        try { const res = await api.get(`/ai/skill-gap/${emp.id}`); setProfileSkillGap(res.data); } catch { /* ignore */ }
+    };
+
+    const handlePayrollOnChain = async (record) => {
+        if (!web3Service.getAddress()) {
+            showToast('Connect MetaMask wallet first', 'error');
+            return;
+        }
+        setLoggingPayrollOnChain(true);
+        try {
+            const result = await web3Service.logPayrollOnChain(
+                profileEmp.wallet_address || web3Service.getAddress(),
+                record.amount,
+                record.period
+            );
+            await api.put(`/payroll/${record.id}/tx`, { tx_hash: result.txHash });
+            showToast('Payroll logged on-chain!');
+            loadPayroll(profileEmp.id);
+        } catch (err) {
+            showToast(`On-chain failed: ${err.message}`, 'error');
+        } finally {
+            setLoggingPayrollOnChain(false);
+        }
     };
 
     if (loading) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div className="spinner" style={{ margin: '0 auto 12px', width: 28, height: 28 }} />
-                    <p style={{ color: 'var(--text-dim)', fontSize: 13 }}>Loading employees...</p>
-                </div>
+            <div className="page-loader">
+                <div className="spinner-lg" />
+                <p style={{ color: 'var(--text-dim)', fontSize: 13 }}>Loading employees...</p>
             </div>
         );
     }
@@ -414,68 +444,119 @@ export default function EmployeesPage() {
                 </div>
             )}
 
-            {/* Employee Profile Panel */}
+            {/* Employee Profile Panel — AI Insights */}
             {profileEmp && (
                 <div className="modal-overlay" onClick={() => setProfileEmp(null)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+                    <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Employee Profile</h2>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Employee Profile</h2>
+                                <span className="ai-label"><HiOutlineLightningBolt size={10} /> AI Insights</span>
+                            </div>
                             <button onClick={() => setProfileEmp(null)} className="btn-ghost"><HiOutlineX size={18} /></button>
                         </div>
 
                         {/* Profile Header */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22, padding: '16px', background: 'var(--bg-elevated)', borderRadius: 12 }}>
                             <div style={{
-                                width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-hover)',
+                                width: 52, height: 52, borderRadius: '50%',
+                                background: 'var(--accent-gradient)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 20, fontWeight: 700, color: 'var(--text-secondary)'
+                                fontSize: 22, fontWeight: 700, color: 'white', flexShrink: 0,
                             }}>{profileEmp.name.charAt(0)}</div>
-                            <div>
-                                <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{profileEmp.name}</p>
-                                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{profileEmp.role} Â· {profileEmp.department}</p>
+                            <div style={{ flex: 1 }}>
+                                <p style={{ fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{profileEmp.name}</p>
+                                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{profileEmp.role} · {profileEmp.department}</p>
                                 {profileEmp.wallet_address && (
                                     <a href={`https://sepolia.etherscan.io/address/${profileEmp.wallet_address}`} target="_blank" rel="noreferrer"
-                                        style={{ fontSize: 10, color: 'var(--warning)', fontFamily: 'monospace', textDecoration: 'none' }}>
-                                        âŸ  {profileEmp.wallet_address.slice(0, 10)}â€¦{profileEmp.wallet_address.slice(-6)}
+                                        className="chain-badge" style={{ marginTop: 6, display: 'inline-flex', textDecoration: 'none', fontSize: 10 }}>
+                                        <HiOutlineCube size={10} /> {profileEmp.wallet_address.slice(0, 6)}…{profileEmp.wallet_address.slice(-4)}
+                                        <HiOutlineExternalLink size={10} />
                                     </a>
                                 )}
                             </div>
                         </div>
 
-                        {/* AI Score + Trend */}
+                        {/* AI Score Ring + Trend */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-                            <div style={{ padding: 14, background: 'var(--bg-elevated)', borderRadius: 10, textAlign: 'center' }}>
-                                <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 6 }}>AI Score</p>
-                                <p style={{ fontSize: 28, fontWeight: 800, color: aiScores[profileEmp.id] ? scoreColor(aiScores[profileEmp.id].score) : 'var(--text-faint)' }}>
-                                    {aiScores[profileEmp.id]?.score ?? 'â€”'}
+                            <div style={{ padding: 16, background: 'var(--bg-elevated)', borderRadius: 12, textAlign: 'center' }}>
+                                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+                                    AI Productivity Score
                                 </p>
-                                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{aiScores[profileEmp.id]?.rating || 'Loading...'}</p>
+                                {aiScores[profileEmp.id] ? (
+                                    <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 8px' }}>
+                                        <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border-default)" strokeWidth="2.5" />
+                                            <circle cx="18" cy="18" r="15.5" fill="none"
+                                                stroke={scoreColor(aiScores[profileEmp.id].score)}
+                                                strokeWidth="2.5" strokeLinecap="round"
+                                                strokeDasharray={`${aiScores[profileEmp.id].score * 0.974} 100`}
+                                                style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.4,0,0.2,1)' }}
+                                            />
+                                        </svg>
+                                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                            <span style={{ fontSize: 22, fontWeight: 800, color: scoreColor(aiScores[profileEmp.id].score), letterSpacing: '-0.03em' }}>
+                                                {aiScores[profileEmp.id].score}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="spinner" style={{ margin: '20px auto' }} />
+                                )}
+                                <p style={{ fontSize: 12, fontWeight: 600, color: aiScores[profileEmp.id] ? scoreColor(aiScores[profileEmp.id].score) : 'var(--text-dim)' }}>
+                                    {aiScores[profileEmp.id]?.rating || 'Calculating...'}
+                                </p>
                             </div>
-                            <div style={{ padding: 14, background: 'var(--bg-elevated)', borderRadius: 10, textAlign: 'center' }}>
-                                <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 6 }}>Trend</p>
-                                <p style={{ fontSize: 28, fontWeight: 800 }}>{trendIcon(profileEmp.id)}</p>
-                                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                                    {trends[profileEmp.id]?.trend || 'Loading...'}
+                            <div style={{ padding: 16, background: 'var(--bg-elevated)', borderRadius: 12, textAlign: 'center' }}>
+                                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+                                    Performance Trend
                                 </p>
+                                <p style={{ fontSize: 32, marginBottom: 4 }}>{trendIcon(profileEmp.id)}</p>
+                                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
+                                    {trends[profileEmp.id]?.trend || 'Analyzing...'}
+                                </p>
+                                {trends[profileEmp.id]?.percentageChange !== undefined && (
+                                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                                        {trends[profileEmp.id].percentageChange > 0 ? '+' : ''}{trends[profileEmp.id].percentageChange}% vs last period
+                                    </p>
+                                )}
                             </div>
                         </div>
 
+                        {/* Breakdown — if AI score loaded */}
+                        {aiScores[profileEmp.id]?.details && (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 18 }} className="stagger-children">
+                                {[
+                                    { label: 'Completed', value: aiScores[profileEmp.id].details.completedTasks, color: 'var(--success)' },
+                                    { label: 'Total', value: aiScores[profileEmp.id].details.totalTasks, color: 'var(--accent)' },
+                                    { label: 'Rate', value: `${aiScores[profileEmp.id].details.completionRate}%`, color: 'var(--info)' },
+                                    { label: 'On-Time', value: `${aiScores[profileEmp.id].details.deadlineAdherence}%`, color: 'var(--warning)' },
+                                ].map((item, i) => (
+                                    <div key={i} style={{ padding: '10px 6px', background: 'var(--bg-elevated)', borderRadius: 10, textAlign: 'center' }}>
+                                        <p style={{ fontSize: 18, fontWeight: 800, color: item.color, letterSpacing: '-0.02em' }}>{item.value}</p>
+                                        <p style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 3, fontWeight: 500 }}>{item.label}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {/* Weekly Performance Bars */}
                         {trends[profileEmp.id]?.weeks && (
-                            <div style={{ marginBottom: 18, padding: 14, background: 'var(--bg-elevated)', borderRadius: 10 }}>
-                                <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 10 }}>Weekly Completions</p>
-                                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 50 }}>
+                            <div style={{ marginBottom: 18, padding: 14, background: 'var(--bg-elevated)', borderRadius: 12 }}>
+                                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Weekly Completions</p>
+                                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 55 }}>
                                     {trends[profileEmp.id].weeks.map((w, i) => {
                                         const maxH = Math.max(...trends[profileEmp.id].weeks.map(wk => wk.completed), 1);
-                                        const h = (w.completed / maxH) * 40 + 6;
+                                        const h = (w.completed / maxH) * 42 + 6;
                                         return (
                                             <div key={i} style={{ flex: 1, textAlign: 'center' }}>
                                                 <div style={{
-                                                    height: h, borderRadius: 3, margin: '0 auto',
-                                                    width: '60%',
-                                                    background: w.completed > 0 ? 'var(--accent)' : 'var(--bg-hover)',
+                                                    height: h, borderRadius: 4, margin: '0 auto',
+                                                    width: '65%',
+                                                    background: w.completed > 0 ? 'var(--accent-gradient)' : 'var(--bg-hover)',
+                                                    transition: 'height 0.5s cubic-bezier(0.4,0,0.2,1)',
                                                 }} />
-                                                <p style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4 }}>{w.week}</p>
+                                                <p style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4, fontWeight: 500 }}>{w.week}</p>
                                             </div>
                                         );
                                     })}
@@ -483,50 +564,110 @@ export default function EmployeesPage() {
                             </div>
                         )}
 
+                        {/* Skill Gap Analysis */}
+                        {profileSkillGap && (
+                            <div style={{ marginBottom: 18, padding: 14, background: 'var(--bg-elevated)', borderRadius: 12 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                    <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Skill Gap Analysis</p>
+                                    <span className="badge" style={{ background: scoreColor(profileSkillGap.matchPercentage) + '20', color: scoreColor(profileSkillGap.matchPercentage), fontSize: 11, fontWeight: 700 }}>
+                                        {profileSkillGap.matchPercentage}% Match
+                                    </span>
+                                </div>
+                                <div className="progress-bar" style={{ marginBottom: 14, height: 8 }}>
+                                    <div className="progress-fill" style={{ width: `${profileSkillGap.matchPercentage}%` }} />
+                                </div>
+                                {profileSkillGap.matchedSkills?.length > 0 && (
+                                    <div style={{ marginBottom: 10 }}>
+                                        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--success-text)', marginBottom: 6 }}>✓ Matched Skills</p>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                            {profileSkillGap.matchedSkills.map(s => <span key={s} className="badge badge-skill">{s}</span>)}
+                                        </div>
+                                    </div>
+                                )}
+                                {profileSkillGap.missingSkills?.length > 0 && (
+                                    <div style={{ marginBottom: 10 }}>
+                                        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--danger-text)', marginBottom: 6 }}>✗ Missing Skills</p>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                            {profileSkillGap.missingSkills.map(s => <span key={s} className="badge badge-missing">{s}</span>)}
+                                        </div>
+                                    </div>
+                                )}
+                                {profileSkillGap.suggestedCourses?.length > 0 && (
+                                    <div>
+                                        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>📚 Recommended Courses</p>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                            {profileSkillGap.suggestedCourses.map((c, i) => (
+                                                <div key={i} style={{ padding: '7px 12px', background: 'var(--bg-body)', borderRadius: 8, fontSize: 12, color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}>{c}</div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* Skills */}
-                        <div style={{ marginBottom: 14 }}>
-                            <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 8 }}>Skills</p>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        <div style={{ marginBottom: 16 }}>
+                            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Current Skills</p>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                                 {(profileEmp.skills || []).map(s => (
                                     <span key={s} className="badge badge-skill">{s}</span>
                                 ))}
+                                {(!profileEmp.skills || profileEmp.skills.length === 0) && (
+                                    <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>No skills listed</span>
+                                )}
                             </div>
                         </div>
 
                         {/* Payroll Proof Section */}
-                        <div style={{ marginBottom: 14, padding: 14, background: 'var(--bg-elevated)', borderRadius: 10 }}>
-                            <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 10 }}>💰 Payroll Proof</p>
+                        <div style={{ marginBottom: 14, padding: 16, background: 'var(--bg-elevated)', borderRadius: 12 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💰 Payroll Proof</p>
+                                <span className="chain-badge" style={{ fontSize: 9 }}>
+                                    <HiOutlineCube size={10} /> On-Chain
+                                </span>
+                            </div>
                             <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                                 <input type="number" placeholder="Amount (₹)" value={payrollForm.amount}
                                     onChange={e => setPayrollForm({ ...payrollForm, amount: e.target.value })}
-                                    style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-default)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 12 }} />
+                                    className="input" style={{ flex: 1, padding: '8px 12px', fontSize: 12 }} />
                                 <input type="month" value={payrollForm.period}
                                     onChange={e => setPayrollForm({ ...payrollForm, period: e.target.value })}
-                                    style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-default)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 12 }} />
+                                    className="input" style={{ flex: 1, padding: '8px 12px', fontSize: 12 }} />
                             </div>
                             <button onClick={handleMarkPayroll} disabled={savingPayroll || !payrollForm.amount || !payrollForm.period}
-                                className="btn-primary" style={{ width: '100%', padding: '8px 0', fontSize: 12 }}>
-                                {savingPayroll ? 'Saving...' : 'Mark Payroll'}
+                                className="btn-primary" style={{ width: '100%', padding: '10px 0', fontSize: 13, justifyContent: 'center' }}>
+                                {savingPayroll ? <><span className="spinner" /> Saving...</> : 'Create Payroll Record'}
                             </button>
                             {payrollRecords.length > 0 && (
-                                <div style={{ marginTop: 10, maxHeight: 120, overflowY: 'auto' }}>
+                                <div style={{ marginTop: 12, maxHeight: 140, overflowY: 'auto' }}>
                                     {payrollRecords.map(r => (
-                                        <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: 11 }}>
-                                            <span style={{ color: 'var(--text-primary)' }}>₹{r.amount.toLocaleString()} · {r.period}</span>
-                                            {r.tx_hash ? (
-                                                <a href={`https://sepolia.etherscan.io/tx/${r.tx_hash}`} target="_blank" rel="noreferrer"
-                                                    style={{ color: 'var(--accent)', fontSize: 10 }}>🔗 On-chain</a>
-                                            ) : (
-                                                <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>Pending</span>
-                                            )}
+                                        <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: 12 }}>
+                                            <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>₹{r.amount.toLocaleString()} · {r.period}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                {r.tx_hash ? (
+                                                    <a href={`https://sepolia.etherscan.io/tx/${r.tx_hash}`} target="_blank" rel="noreferrer"
+                                                        className="chain-badge" style={{ fontSize: 9, textDecoration: 'none' }}>
+                                                        <HiOutlineCube size={9} /> Verified
+                                                    </a>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handlePayrollOnChain(r)}
+                                                        disabled={loggingPayrollOnChain}
+                                                        className="btn-ghost"
+                                                        style={{ fontSize: 10, padding: '3px 8px', color: 'var(--accent)' }}
+                                                    >
+                                                        {loggingPayrollOnChain ? '...' : '⛓ Log On-Chain'}
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
 
-                        <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 12 }}>
-                            Joined {new Date(profileEmp.created_at).toLocaleDateString()}
+                        <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 12, textAlign: 'center' }}>
+                            Joined {new Date(profileEmp.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                         </p>
                     </div>
                 </div>

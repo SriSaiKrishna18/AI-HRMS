@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import WalletConnect from './WalletConnect';
-import { HiOutlineViewGrid, HiOutlineUserGroup, HiOutlineClipboardList, HiOutlineLogout, HiOutlineMenu, HiOutlineX, HiOutlineMoon, HiOutlineSun, HiOutlineChartBar, HiOutlineCurrencyDollar } from 'react-icons/hi';
+import { HiOutlineViewGrid, HiOutlineUserGroup, HiOutlineClipboardList, HiOutlineLogout, HiOutlineMenu, HiOutlineX, HiOutlineMoon, HiOutlineSun, HiOutlineChartBar, HiOutlineCurrencyDollar, HiOutlineLightBulb } from 'react-icons/hi';
 
 export default function Layout() {
     const { user, logout } = useAuth();
@@ -18,6 +18,7 @@ export default function Layout() {
         { to: '/employees', icon: <HiOutlineUserGroup size={18} />, label: 'Employees' },
         { to: '/tasks', icon: <HiOutlineClipboardList size={18} />, label: 'Tasks' },
         { to: '/analytics', icon: <HiOutlineChartBar size={18} />, label: 'Analytics' },
+        { to: '/ai-insights', icon: <HiOutlineLightBulb size={18} />, label: 'AI Insights' },
         { to: '/payroll', icon: <HiOutlineCurrencyDollar size={18} />, label: 'Payroll' },
     ];
 

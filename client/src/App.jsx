@@ -9,6 +9,8 @@ import EmployeesPage from './pages/EmployeesPage';
 import TasksPage from './pages/TasksPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import PayrollPage from './pages/PayrollPage';
+import AIInsightsPage from './pages/AIInsightsPage';
+import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function ProtectedRoute({ children }) {
@@ -38,6 +40,8 @@ function App() {
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/payroll" element={<PayrollPage />} />
+                <Route path="/ai-insights" element={<AIInsightsPage />} />
+                <Route path="/employees/:id" element={<EmployeeDetailPage />} />
               </Route>
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

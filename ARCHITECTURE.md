@@ -1,122 +1,337 @@
-# RizeOS Architecture
+# RizeOS AI-HRMS — System Architecture
 
-## System Overview
+## High-Level Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         CLIENT                              │
-│  React SPA (Vite) · CSS Variables Theming · React Router    │
-│                                                             │
-│   LoginPage  DashboardPage  EmployeesPage  TasksPage  Analytics  │
-│       ↓            ↓              ↓           ↓          ↓  │
-│              axios API service (JWT interceptor)             │
-└──────────────────────────┬──────────────────────────────────┘
-                           │  HTTPS (JSON)
-┌──────────────────────────▼──────────────────────────────────┐
-│                         SERVER                              │
-│  Express.js · Node.js · Port 5000                           │
-│                                                             │
-│  Middleware Chain:                                           │
-│  helmet → CORS → rate-limit → JSON parser → morgan          │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  Routes Layer                                        │    │
-│  │  /api/auth · /api/employees · /api/tasks             │    │
-│  │  /api/dashboard · /api/ai · /api/analytics           │    │
-│  │  /api/payroll                                        │    │
-│  └──────────────────────┬──────────────────────────────┘    │
-│                         ↓                                    │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  Controllers (business logic)                        │    │
-│  │  authController · employeeController · taskController│    │
-│  │  dashboardController · aiController                  │    │
-│  │  analyticsController · payrollController             │    │
-│  └──────────────────────┬──────────────────────────────┘    │
-│                         ↓                                    │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  Data Access (better-sqlite3 synchronous)            │    │
-│  │  WAL mode · Foreign keys · Parameterized queries     │    │
-│  └─────────────────────────────────────────────────────┘    │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│  SQLite Database (rizeos.db)                                 │
-│  organizations · employees · tasks · payroll_records         │
-│  role_requirements                                           │
-└─────────────────────────────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│  Ethereum (Sepolia Testnet)                                  │
-│  Smart Contract: TaskLogger.sol                              │
-│  Events: TaskCompleted · PayrollLogged                       │
-│  Connection: ethers.js via MetaMask (browser wallet)         │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Client["Frontend (React SPA)"]
+        UI["React Components"]
+        Router["React Router v6"]
+        AuthCtx["AuthContext (JWT)"]
+        API["Axios Client + Interceptor"]
+        W3["Web3Service (ethers.js)"]
+    end
+
+    subgraph Server["Backend (Node.js + Express)"]
+        MW["Middleware Stack"]
+        Routes["REST API Routes"]
+        Controllers["Business Logic"]
+        AI["AI Engine"]
+    end
+
+    subgraph Storage["Data Layer"]
+        SQLite["SQLite (better-sqlite3)"]
+        Seed["Auto-Seed on Empty DB"]
+    end
+
+    subgraph Blockchain["Web3 Layer (Sepolia)"]
+        MM["MetaMask Wallet"]
+        SC["TaskLogger Smart Contract"]
+        ETH["Etherscan Verified"]
+    end
+
+    UI --> Router --> AuthCtx --> API
+    API -->|HTTPS + JWT| MW
+    MW --> Routes --> Controllers
+    Controllers --> SQLite
+    Controllers --> AI
+    W3 --> MM --> SC
+    SC --> ETH
+    Seed -.->|if empty| SQLite
+
+    style Client fill:#1e293b,stroke:#3b82f6,color:#fff
+    style Server fill:#1e293b,stroke:#10b981,color:#fff
+    style Storage fill:#1e293b,stroke:#f59e0b,color:#fff
+    style Blockchain fill:#1e293b,stroke:#8b5cf6,color:#fff
 ```
 
-## Technology Choices
-
-| Layer | Technology | Rationale |
-|---|---|---|
-| Frontend | React + Vite | Fast HMR, modern JSX, small bundle size |
-| Styling | CSS Custom Properties | Theme switching without class-name swapping, zero runtime overhead |
-| Charting | Recharts | React-native SVG charts, faster integration than D3 for standard chart types |
-| HTTP Client | Axios | Interceptor support for JWT, automatic JSON parsing |
-| Backend | Express.js | Minimal, unopinionated, widely adopted |
-| Database | better-sqlite3 | Synchronous API (no callback hell), embedded (no external DB setup), WAL for concurrency |
-| Auth | JWT (jsonwebtoken) + bcryptjs | Stateless auth, no session storage needed |
-| Validation | express-validator | Declarative validation rules, sanitization built in |
-| Security | helmet + rate-limiting | HTTP header hardening, brute-force protection |
-| Blockchain | Solidity + ethers.js | Industry-standard smart contract language + lightweight Web3 library |
-
-## Request Flow
-
-```
-Browser → Axios interceptor (attaches JWT)
-  → Express middleware chain
-    → helmet (headers)
-    → CORS (origin check)
-    → rate-limiter (request throttle)
-    → JSON parser (body)
-    → morgan (logging)
-  → Route handler
-    → auth middleware (JWT verify → req.org)
-    → validate middleware (express-validator sanitize)
-    → Controller (business logic + DB queries)
-  → JSON response → Axios → React state → UI render
-```
-
-## AI Features Architecture
-
-The AI module (`aiController.js`) implements four scoring engines:
-
-1. **Productivity Score** — Weighted formula: completion rate (40%) + deadline adherence (30%) + activity recency (20%) + volume bonus (10%)
-2. **Skill Gap Analysis** — Compares employee skills against `role_requirements` table, suggests courses
-3. **Smart Task Assignment** — Ranks all employees: skill match (50%) + workload availability (30%) + productivity history (20%)
-4. **Performance Trend** — 4-week rolling window, computes week-over-week delta to classify as improving/stable/declining
+---
 
 ## Database Schema
 
-```sql
-organizations (id, name, email, password_hash, created_at)
-employees     (id, org_id FK, name, email, role, department, skills JSON, wallet_address, is_active, created_at)
-tasks         (id, org_id FK, employee_id FK, title, description, status CHECK, deadline, tx_hash, created_at, completed_at)
-payroll_records (id, org_id FK, employee_id FK, amount, period, notes, tx_hash, created_at)
-role_requirements (id, role UNIQUE, required_skills JSON, suggested_courses JSON)
+```mermaid
+erDiagram
+    organizations ||--o{ employees : has
+    organizations ||--o{ tasks : owns
+    organizations ||--o{ payroll_records : manages
+    employees ||--o{ tasks : assigned
+    employees ||--o{ payroll_records : receives
+
+    organizations {
+        INTEGER id PK
+        TEXT name
+        TEXT email UK
+        TEXT password_hash
+        DATETIME created_at
+    }
+
+    employees {
+        INTEGER id PK
+        INTEGER org_id FK
+        TEXT name
+        TEXT email
+        TEXT role
+        TEXT department
+        TEXT skills "JSON array"
+        TEXT wallet_address "nullable"
+        INTEGER is_active "default 1"
+        DATETIME created_at
+    }
+
+    tasks {
+        INTEGER id PK
+        INTEGER org_id FK
+        INTEGER employee_id FK
+        TEXT title
+        TEXT description
+        TEXT status "assigned|in_progress|completed"
+        DATETIME deadline
+        TEXT tx_hash "blockchain ref"
+        DATETIME completed_at
+        DATETIME created_at
+    }
+
+    payroll_records {
+        INTEGER id PK
+        INTEGER org_id FK
+        INTEGER employee_id FK
+        REAL amount
+        TEXT period "YYYY-MM"
+        TEXT notes
+        TEXT tx_hash "blockchain ref"
+        DATETIME created_at
+    }
+
+    role_requirements {
+        INTEGER id PK
+        TEXT role UK
+        TEXT required_skills "JSON array"
+        TEXT suggested_courses "JSON array"
+    }
 ```
 
-## Scaling Strategy
+### Performance Indexes
+```sql
+CREATE INDEX idx_employees_org ON employees(org_id);
+CREATE INDEX idx_employees_dept ON employees(org_id, department);
+CREATE INDEX idx_tasks_org ON tasks(org_id);
+CREATE INDEX idx_tasks_employee ON tasks(employee_id);
+CREATE INDEX idx_tasks_status ON tasks(org_id, status);
+CREATE INDEX idx_tasks_completed ON tasks(org_id, completed_at);
+CREATE INDEX idx_payroll_employee ON payroll_records(employee_id);
+CREATE INDEX idx_payroll_org ON payroll_records(org_id);
+```
 
-| Component | Current | Scale Path |
+---
+
+## API Architecture
+
+### Middleware Pipeline
+
+```
+Request → CORS → Helmet → Rate Limiter → JSON Parser → Auth (JWT) → Controller → Response
+```
+
+| Middleware | Purpose |
+|---|---|
+| **CORS** | Whitelist frontend origins (Vercel, localhost) |
+| **Helmet** | Security headers (CSP, HSTS, X-Frame-Options) |
+| **Rate Limiter** | 100 requests/15 min per IP (brute-force protection) |
+| **express.json** | Parse JSON bodies (10kb limit) |
+| **Auth middleware** | Verify JWT, inject `req.org` with org context |
+
+### Route Map
+
+| Route Group | Endpoints | Auth | Description |
+|---|---|---|---|
+| `/api/auth` | POST `/register`, `/login` | ❌ | JWT-based org authentication |
+| `/api/employees` | CRUD + CSV export | ✅ | Employee lifecycle management |
+| `/api/tasks` | CRUD + status transitions | ✅ | Workforce task tracking |
+| `/api/dashboard` | GET `/stats`, `/task-trend`, `/dept-distribution` | ✅ | Aggregated analytics |
+| `/api/ai` | 5 intelligence endpoints | ✅ | AI-powered workforce insights |
+| `/api/analytics` | GET `/team-performance` | ✅ | Team-level analytics |
+| `/api/payroll` | CRUD + tx hash storage | ✅ | Payroll record management |
+
+### Multi-Tenant Isolation
+
+Every query is scoped by `org_id` extracted from the JWT token:
+```javascript
+// Auth middleware injects org context
+const org = jwt.verify(token, SECRET);
+req.org = { id: org.id, name: org.name };
+
+// Every controller query is org-scoped
+const employees = db.prepare(
+    'SELECT * FROM employees WHERE org_id = ?'
+).all(req.org.id);
+```
+
+---
+
+## AI Engine Architecture
+
+### Module 1: Productivity Score
+```
+Input:  employee_id
+Output: { score: 0-100, breakdown, rating }
+
+Algorithm:
+  completion_rate  = (completed / total) × 100           [40%]
+  timeliness       = (on_time / completed) × 100         [30%]
+  speed            = avg days (created → completed)      [20%]
+  consistency      = 1 - stddev(weekly_completions)/mean  [10%]
+
+  final_score = weighted_sum(above)
+  rating = excellent (≥80) | good (≥60) | average (≥40) | needs_improvement (<40)
+```
+
+### Module 2: Skill Gap Detection
+```
+Input:  employee_id
+Output: { matchPercentage, missingSkills[], suggestedCourses[] }
+
+Process:
+  1. Load employee skills (JSON array)
+  2. Load role_requirements for employee's role
+  3. Compute set difference: required - current = missing
+  4. Return match %, missing list, and curated course suggestions
+```
+
+### Module 3: Smart Task Assignment
+```
+Input:  { title, requiredSkills[] }
+Output: top 3 employees ranked by composite score
+
+Composite = (skill_match × 0.5) + (workload_avail × 0.3) + (productivity × 0.2)
+
+  skill_match:  |intersection(emp.skills, required)| / |required|
+  workload:     inverse of active task count (assigned + in_progress)
+  productivity: historical completion rate
+```
+
+### Module 4: Performance Trend Prediction
+```
+4-week rolling window with weekly completion counts:
+  [week1, week2, week3, week4]
+
+  recent_avg = avg(week3, week4)
+  older_avg  = avg(week1, week2)
+  delta      = recent_avg - older_avg
+
+  trend = "improving" if delta > 0, "stable" if 0, "declining" if < 0
+```
+
+---
+
+## Web3 Integration Architecture
+
+```mermaid
+sequenceDiagram
+    participant User as HR Admin
+    participant App as React Frontend
+    participant MM as MetaMask
+    participant SC as TaskLogger Contract
+    participant DB as Backend DB
+
+    User->>App: Click "Log on Chain"
+    App->>MM: Request signature
+    MM->>User: Confirm transaction
+    User->>MM: Approve
+    MM->>SC: logTaskCompletion(employee, taskId)
+    SC->>SC: Emit TaskCompleted event
+    SC-->>MM: Return tx hash
+    MM-->>App: Transaction receipt
+    App->>DB: PUT /tasks/:id/tx {tx_hash}
+    DB-->>App: Updated record
+    App-->>User: Show ✅ with Etherscan link
+```
+
+### Smart Contract Details
+| Property | Value |
+|---|---|
+| **Contract** | `TaskLogger.sol` |
+| **Network** | Ethereum Sepolia Testnet |
+| **Address** | `0x2e2605F492B36b29F8388a610e180d46A8f5d77e` |
+| **Compiler** | Solidity ^0.8.19 |
+| **Verified** | ✅ Sourcify, Blockscout, Routescan |
+
+### Fallback Strategy
+If the smart contract is not deployed or the user has no MetaMask:
+- Transactions are sent to the burn address (`0x...dEaD`) with encoded data
+- This ensures on-chain proof exists even without a custom contract
+- The app gracefully degrades — all features work without Web3
+
+---
+
+## Security Measures
+
+| Layer | Measure | Implementation |
 |---|---|---|
-| Database | SQLite (single file) | Migrate to PostgreSQL + connection pool |
-| Backend | Single Node process | PM2 cluster mode → Kubernetes pods |
-| Frontend | Vite dev / static build | Vercel/Netlify CDN edge deploy |
-| Auth | JWT (stateless) | Already horizontally scalable |
-| Blockchain | Sepolia testnet | Mainnet or L2 (Polygon/Base) |
+| **Transport** | HTTPS enforced | Vercel/Render TLS termination |
+| **Headers** | Security headers | Helmet middleware (CSP, HSTS, X-Frame) |
+| **Auth** | JWT tokens | 7-day expiry, bcrypt password hashing (10 rounds) |
+| **Rate Limiting** | API throttling | 100 req/15min per IP |
+| **Input** | Body size limit | 10KB JSON payload limit |
+| **SQL Injection** | Parameterized queries | All DB queries use `?` placeholders |
+| **CORS** | Origin whitelist | Only allowed frontend domains |
+| **Multi-Tenant** | Data isolation | Every query scoped by `org_id` from JWT |
 
-## Trade-offs
+---
 
-- **SQLite vs PostgreSQL**: SQLite chosen for zero-config demo deployment (Render ephemeral FS), auto-seed on empty DB. Trade-off: no concurrent writes at scale.
-- **Burn address for Web3**: Uses Sepolia testnet with optional wallet connection. No real assets at risk during development.
-- **Synchronous DB**: `better-sqlite3` is synchronous — simplifies code but blocks the event loop on heavy queries. Acceptable for <100 concurrent users.
-- **CSS Variables vs CSS-in-JS**: Zero runtime cost, works with SSR, no library dependency. Trade-off: less type-safe than styled-components.
+## Production Scaling Path
+
+### Current (Demo/MVP)
+- SQLite with WAL mode — zero-config, self-contained
+- Single Node.js process
+- Auto-seed on empty database for evaluator convenience
+
+### 1K Employees
+```diff
+- SQLite (better-sqlite3)
++ PostgreSQL (Supabase/Neon) with connection pooling (pg-pool)
++ Database migrations with node-pg-migrate
+```
+
+### 10K Employees
+```diff
++ Redis caching layer for dashboard stats (TTL: 5min)
++ Background job queue (BullMQ) for AI computations
++ Elasticsearch for full-text employee/skill search
+```
+
+### 100K Employees
+```diff
++ Horizontal Node.js replicas behind load balancer
++ Read replicas for analytics queries
++ Materialized views for dashboard aggregations
++ CDN for static frontend assets
+```
+
+### 1M Task Logs
+```diff
++ TimescaleDB hypertables for time-series task data
++ Partitioned tables by org_id + month
++ Streaming aggregation with Apache Kafka
++ The Graph indexer for on-chain event queries
+```
+
+### Cost-Efficient Blockchain at Scale
+```diff
+- Sepolia testnet (demo)
++ Polygon PoS (production) — $0.001/tx vs $2+ on Ethereum mainnet
++ Batch transactions — group 100 task logs into single tx
++ The Graph subgraph for indexed on-chain queries
+```
+
+---
+
+## Why These Technology Choices?
+
+| Decision | Rationale |
+|---|---|
+| **SQLite over PostgreSQL** | Zero-config demo deployment. Auto-seeds on empty DB so evaluators always see data. Migration path documented above. |
+| **better-sqlite3 over sqlite3** | Synchronous API is 10x faster than async sqlite3 for simple queries. WAL mode enables concurrent reads. |
+| **JWT over Sessions** | Stateless auth scales horizontally. No session store needed. |
+| **Ethers.js v6 over Web3.js** | Smaller bundle, better TypeScript support, cleaner API. |
+| **Recharts over D3** | React-native integration, declarative API, lighter than raw D3 for standard charts. |
+| **Vite over CRA** | 10-100x faster HMR, native ESM, optimized production builds. |
